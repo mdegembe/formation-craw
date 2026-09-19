@@ -1,0 +1,12 @@
+/vendor/
+/.env
+/storage/cache/*
+/storage/logs/*
+/storage/tmp/*
+/storage/diplomas/*
+/storage/uploads/*
+/storage/*.sqlite
+!/storage/**/.gitkeep
+/public/assets/dist/
+.DS_Store
+*.log

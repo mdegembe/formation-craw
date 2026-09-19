@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img"
+     aria-label="Formation CRA-W, du 15 au 19 mars 2027 a Gembloux">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5f5f5"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="14" fill="#198754"/>
+  <rect x="80" y="96" width="132" height="132" rx="16" fill="#198754"/>
+  <text x="146" y="176" font-family="system-ui, sans-serif" font-size="30" font-weight="700"
+        fill="#ffffff" text-anchor="middle">CRA-W</text>
+  <text x="80" y="330" font-family="system-ui, sans-serif" font-size="66" font-weight="700" fill="#212529">
+    Formation CRA-W
+  </text>
+  <text x="80" y="404" font-family="system-ui, sans-serif" font-size="38" fill="#0f5132">
+    Du 15 au 19 mars 2027 — Gembloux
+  </text>
+  <text x="80" y="466" font-family="system-ui, sans-serif" font-size="28" fill="#5c636a">
+    Centre wallon de Recherches agronomiques
+  </text>
+  <path d="M0 560c180 26 360 34 540 22s360-26 540-24 90 6 120 10v62H0z" fill="#198754" opacity=".12"/>
+</svg>

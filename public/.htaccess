@@ -1,0 +1,49 @@
+# ---------------------------------------------------------------------------
+# Formation CRA-W — configuration Apache
+# ---------------------------------------------------------------------------
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Force HTTPS en production (commenter en développement local).
+    # RewriteCond %{HTTPS} !=on
+    # RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Retire le slash final, sauf à la racine.
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.+)/$ /$1 [L,R=301]
+
+    # Tout ce qui n'est pas un fichier existant passe par le front controller.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always unset X-Powered-By
+
+    # Cache long sur les assets versionnés par empreinte (?v=...).
+    <FilesMatch "\.(css|js|svg|woff2|png|jpe?g|webp|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE application/xml image/svg+xml
+</IfModule>
+
+# Empêche l'indexation directe de fichiers sensibles s'ils étaient déplacés ici.
+<FilesMatch "^(\.env|composer\.(json|lock)|.*\.md|.*\.sqlite)$">
+    Require all denied
+</FilesMatch>
+
+Options -Indexes
+DirectoryIndex index.php
+
+ErrorDocument 404 /index.php

@@ -1,0 +1,39 @@
+{
+    "name": "craw/formation",
+    "description": "Site de presentation et d'inscription pour une formation du CRA-W",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-gd": "*",
+        "dompdf/dompdf": "^3.1",
+        "endroid/qr-code": "^5.1",
+        "phpmailer/phpmailer": "^6.12"
+    },
+    "autoload": {
+        "psr-4": {
+            "Craw\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Craw\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "scripts": {
+        "migrate": "php bin/console.php migrate",
+        "seed": "php bin/console.php seed",
+        "serve": "php -S localhost:8080 -t public public/index.php",
+        "test": "php tests/run.php"
+    }
+}
