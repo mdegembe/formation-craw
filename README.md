@@ -27,7 +27,7 @@ une mention « en cours de définition » et tout le contenu est éditable depui
 - liste filtrable des inscrits, fiche détaillée, export CSV compatible Excel ;
 - confirmation manuelle des paiements, exonérations, relances automatiques ;
 - **pointage des présences à l'envers** : tout le monde est présumé présent, seules les
-  absences sont saisies ;
+  absences sont saisies — présent ou absent, sans motif à collecter ni à arbitrer ;
 - statistiques alimentaires et fiche traiteur PDF ;
 - génération des diplômes PDF à partir d'un **modèle fourni par l'administrateur**, envoi par
   courriel avec le PDF en pièce jointe, et impression groupée en un seul fichier ;
@@ -148,7 +148,6 @@ publication d'une actualité.
 | Capacité | Administration → Configuration | 40 places |
 | Délai de paiement | Administration → Configuration | 15 jours |
 | Relances | Administration → Configuration | 7 et 3 jours avant échéance |
-| Absences justifiées comptées présentes | Administration → Configuration | non |
 | Conservation des données | Administration → Configuration | 3 ans |
 
 Le seuil de présence est lu en priorité depuis la base (donc depuis le back-office) ;

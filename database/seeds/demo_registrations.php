@@ -126,19 +126,19 @@ return static function (): void {
 
     if ($days !== []) {
         $absenceProfiles = [
-            // [index du participant, indices des creneaux manques, justifiee]
-            [0, [3], true],
-            [1, [0, 1], false],
-            [2, [7], false],
-            [4, [2, 3, 4], false],   // 70 % : sous le seuil
-            [5, [9], false],
-            [8, [0, 1, 2, 3], false], // 60 % : sous le seuil
-            [11, [5], true],
-            [14, [8, 9], false],
-            [17, [4], false],
+            // [index du participant, indices des creneaux manques]
+            [0, [3]],
+            [1, [0, 1]],
+            [2, [7]],
+            [4, [2, 3, 4]],    // 70 % : sous le seuil
+            [5, [9]],
+            [8, [0, 1, 2, 3]], // 60 % : sous le seuil
+            [11, [5]],
+            [14, [8, 9]],
+            [17, [4]],
         ];
 
-        foreach ($absenceProfiles as [$participantIndex, $dayIndexes, $justified]) {
+        foreach ($absenceProfiles as [$participantIndex, $dayIndexes]) {
             if (!isset($createdIds[$participantIndex])) {
                 continue;
             }
@@ -148,13 +148,7 @@ return static function (): void {
                     continue;
                 }
 
-                $attendance->markAbsent(
-                    $createdIds[$participantIndex],
-                    (int) $days[$dayIndex]['id'],
-                    $justified,
-                    $justified ? 'Certificat médical transmis.' : null,
-                    null
-                );
+                $attendance->markAbsent($createdIds[$participantIndex], (int) $days[$dayIndex]['id']);
             }
         }
     }

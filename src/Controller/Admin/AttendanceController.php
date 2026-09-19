@@ -38,7 +38,6 @@ final class AttendanceController extends AdminController
             'summary' => $service->summary($trainingId),
             'statistics' => $service->statistics($trainingId),
             'minRate' => Settings::minAttendanceRate(),
-            'justifiedCountsPresent' => (bool) Settings::get('attendance.justified_counts_present', false),
         ]);
     }
 
@@ -102,34 +101,6 @@ final class AttendanceController extends AdminController
             $totalAbsences,
             count($dayIds)
         ));
-
-        return $this->redirect('/admin/presences');
-    }
-
-    /** Precise le motif d'une absence et son caractere justifie. */
-    public function saveReason(Request $request, array $params): Response
-    {
-        $registrationId = $request->integer('registration_id');
-        $dayId = $request->integer('training_day_id');
-
-        if ($registrationId <= 0 || $dayId <= 0) {
-            $this->badRequest('Paramètres manquants.');
-        }
-
-        (new AttendanceRepository())->markAbsent(
-            $registrationId,
-            $dayId,
-            $request->boolean('is_justified'),
-            $request->input('reason'),
-            Auth::id()
-        );
-
-        Audit::record('attendance.reason', 'registration', $registrationId, [
-            'training_day_id' => $dayId,
-            'justified' => $request->boolean('is_justified'),
-        ], $request->ipHash());
-
-        Session::flash('success', 'Motif d\'absence enregistré.');
 
         return $this->redirect('/admin/presences');
     }

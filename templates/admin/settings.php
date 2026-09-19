@@ -140,8 +140,12 @@ View::extend('layouts/admin');
 
     <div class="panel mb-3">
         <h2 style="font-size: 1.125rem;">Diplômes et présences</h2>
+        <p class="text-muted small">
+            La présence est binaire : un participant est présent ou absent, sans motif ni
+            exception à arbitrer.
+        </p>
 
-        <div class="form-grid form-grid--3 mt-3">
+        <div class="form-grid form-grid--2 mt-3">
             <div class="form-field">
                 <label class="form-label" for="min_attendance">
                     Taux de présence minimal (%)
@@ -161,20 +165,6 @@ View::extend('layouts/admin');
                 <input class="form-control" type="text" id="diploma_prefix" name="diploma_prefix" maxlength="10"
                        value="<?= e((string) Settings::get('diploma.number_prefix')) ?>">
                 <p class="form-hint">Ex. : <code>CRAW</code> donne <code>CRAW-2027-0001</code>.</p>
-            </div>
-
-            <div class="form-field">
-                <label class="form-label">Absences justifiées</label>
-                <div class="form-check">
-                    <input type="checkbox" id="justified_counts_present" name="justified_counts_present" value="1"
-                        <?= Settings::get('attendance.justified_counts_present') ? 'checked' : '' ?>>
-                    <label for="justified_counts_present">
-                        Compter les absences justifiées comme des présences
-                    </label>
-                </div>
-                <p class="form-hint">
-                    Décoché, une absence justifiée pénalise malgré tout le taux de présence.
-                </p>
             </div>
         </div>
     </div>

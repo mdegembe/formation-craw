@@ -33,7 +33,6 @@ final class AttendanceService
     {
         $totalSlots = $this->trainings->attendanceSlotCount($trainingId);
         $counts = $this->attendance->absenceCounts($trainingId);
-        $justifiedCountsPresent = (bool) Settings::get('attendance.justified_counts_present', false);
         $eligibility = new DiplomaEligibility(Settings::minAttendanceRate());
 
         $training = $this->trainings->find($trainingId);
@@ -43,10 +42,9 @@ final class AttendanceService
 
         foreach ($this->registrations->confirmedParticipants($trainingId) as $participant) {
             $id = (int) $participant['id'];
-            $absences = $counts[$id]['absences'] ?? 0;
-            $justified = $counts[$id]['justified'] ?? 0;
+            $absences = $counts[$id] ?? 0;
 
-            $rate = AttendanceCalculator::rate($totalSlots, $absences, $justified, $justifiedCountsPresent);
+            $rate = AttendanceCalculator::rate($totalSlots, $absences);
 
             $verdict = $eligibility->evaluate(
                 $rate,
@@ -58,13 +56,7 @@ final class AttendanceService
             $rows[] = $participant + [
                 'total_slots' => $totalSlots,
                 'absences' => $absences,
-                'justified_absences' => $justified,
-                'present_slots' => AttendanceCalculator::presentSlots(
-                    $totalSlots,
-                    $absences,
-                    $justified,
-                    $justifiedCountsPresent
-                ),
+                'present_slots' => AttendanceCalculator::presentSlots($totalSlots, $absences),
                 'attendance_rate' => $rate,
                 'attendance_label' => AttendanceCalculator::format($rate),
                 'eligible' => $verdict['eligible'],
@@ -79,7 +71,7 @@ final class AttendanceService
     /**
      * Grille de pointage : participants x creneaux, avec l'etat courant.
      *
-     * @return array{days: array<int, array<string, mixed>>, participants: array<int, array<string, mixed>>, absences: array<int, array<int, array{is_justified: bool, reason: string|null}>>}
+     * @return array{days: array<int, array<string, mixed>>, participants: array<int, array<string, mixed>>, absences: array<int, array<int, true>>}
      */
     public function grid(int $trainingId): array
     {

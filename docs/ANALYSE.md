@@ -187,13 +187,16 @@ coûteux et source d'erreur ; on pointe les **absences**.
   par défaut, configurable (nombre de jours, demi-journées ou journées entières).
 - Chaque participant payé est **présumé présent** sur tous les créneaux. Aucune ligne n'est écrite
   en base tant que rien n'est signalé.
-- La table `absences` ne stocke **que les exceptions** : `(registration_id, day_id, motif, justifiee)`.
+- La table `absences` ne stocke **que les exceptions** : `(registration_id, day_id)`.
   Le stockage est minimal et le calcul trivial.
+- **La présence est binaire** : un participant est présent ou absent. Aucun motif n'est
+  collecté, aucune absence n'est « justifiée ». Décision assumée : arbitrer des justificatifs
+  serait un processus supplémentaire pour l'organisateur, sans bénéfice pour le participant,
+  et introduirait une appréciation discrétionnaire dans une règle qui doit rester mécanique.
 - **Écran de pointage** : une grille participants × créneaux, cases décochées = absent. Un bouton
   « Tout présent » par créneau, sélection au clavier, enregistrement AJAX au fil de l'eau et
   bouton d'enregistrement global (fonctionne sans JavaScript).
-- **Taux de présence** = `(créneaux_total − absences_non_excusées) / créneaux_total`.
-  Le traitement des absences justifiées est paramétrable : comptées comme présence ou non.
+- **Taux de présence** = `(créneaux_total − absences) / créneaux_total`.
 - Export d'une **feuille d'émargement PDF** par jour, pour la signature papier.
 
 ### 3.6 Diplômes
@@ -252,7 +255,7 @@ Flux RSS et intégration au sitemap.
 | RG-03 | Le nombre de places est limité (paramètre). Au-delà, les inscriptions basculent en liste d'attente. |
 | RG-04 | La communication structurée est unique, immuable et dérivée de l'identifiant d'inscription. |
 | RG-05 | Seul un administrateur peut passer un paiement à `paid`, action tracée (qui, quand, montant). |
-| RG-06 | Un participant est présumé présent ; seules les absences sont saisies. |
+| RG-06 | Un participant est présumé présent ; seules les absences sont saisies. La présence est binaire : ni motif, ni absence justifiée. |
 | RG-07 | Le diplôme exige un taux de présence ≥ seuil configurable (80 % par défaut) **et** un paiement réglé. |
 | RG-08 | Un diplôme généré est immuable : toute régénération crée une nouvelle version, l'ancienne est conservée. |
 | RG-09 | Les données personnelles sont purgées 3 ans après la formation (paramétrable), hors obligations comptables. |
@@ -296,7 +299,7 @@ payments(id PK, registration_id FK, status ENUM(unpaid,reminded,partial,paid,ref
          confirmed_by FK admin_users, confirmed_at, reminders_sent, last_reminder_at)
 
 absences(id PK, registration_id FK, training_day_id FK,
-         reason, is_justified BOOL, recorded_by FK, recorded_at,
+         recorded_by FK, recorded_at,
          UNIQUE(registration_id, training_day_id))
 
 diplomas(id PK, registration_id FK, number UNIQUE, version,
@@ -514,6 +517,12 @@ remplacer par le fichier officiel fourni par le service communication (emplaceme
 
 ## 11. Points ouverts à arbitrer
 
+> **Arbitrages rendus le 19/09/2026.** La présence est binaire : absent ou présent, sans
+> motif ni absence justifiée, et sans processus supplémentaire (point 6, désormais clos et
+> retiré du code). Tarif, bâtiment et capacité restent aux valeurs d'hypothèse, toutes
+> modifiables depuis Administration → Configuration.
+
+
 | # | Question | Hypothèse retenue à défaut de réponse |
 |---|---|---|
 | 1 | Sujet, programme détaillé, intervenants | Contenu de remplacement + bannière « en cours de définition », éditable en back-office |
@@ -521,6 +530,5 @@ remplacer par le fichier officiel fourni par le service communication (emplaceme
 | 3 | Bâtiment exact | Léon Lacroix, 9 rue de Liroux, 5030 Gembloux, paramétrable |
 | 4 | Coordonnées bancaires réelles | IBAN de démonstration en configuration, à remplacer avant mise en production |
 | 5 | Capacité d'accueil | 40 places, paramétrable, liste d'attente au-delà |
-| 6 | Absences justifiées comptées comme présence ? | Non par défaut, paramétrable |
-| 7 | Logo officiel et visuels | Bloc-marque textuel provisoire, emplacement de remplacement documenté |
-| 8 | Serveur SMTP | `mail()` en repli, SMTP recommandé, configuré dans `.env` |
+| 6 | Logo officiel et visuels | Bloc-marque textuel provisoire, emplacement de remplacement documenté |
+| 7 | Serveur SMTP | `mail()` en repli, SMTP recommandé, configuré dans `.env` |

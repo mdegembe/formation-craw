@@ -13,7 +13,7 @@ use Craw\Service\RegistrationService;
  *
  * @var array<int, array<string, mixed>> $days
  * @var array<int, array<string, mixed>> $participants
- * @var array<int, array<int, array{is_justified: bool, reason: string|null}>> $absences
+ * @var array<int, array<int, true>> $absences
  * @var array<int, array<string, mixed>> $summary
  */
 View::extend('layouts/admin');
@@ -67,10 +67,7 @@ foreach ($summary as $row) {
         <div class="stat">
             <span class="stat__label">Sous le seuil</span>
             <span class="stat__value"><?= e((string) $statistics['not_eligible']) ?></span>
-            <span class="stat__hint">
-                absences justifiées
-                <?= $justifiedCountsPresent ? 'comptées présentes' : 'comptées absentes' ?>
-            </span>
+            <span class="stat__hint">pas de diplôme en l'état</span>
         </div>
     </div>
 
@@ -142,9 +139,7 @@ foreach ($summary as $row) {
                             <?php foreach ($days as $day): ?>
                                 <?php
                                 $dayId = (int) $day['id'];
-                                $absence = $absences[$participantId][$dayId] ?? null;
-                                $isPresent = $absence === null;
-                                $justified = $absence !== null && $absence['is_justified'];
+                                $isPresent = !isset($absences[$participantId][$dayId]);
                                 ?>
                                 <td class="slot">
                                     <input type="checkbox"
@@ -159,11 +154,6 @@ foreach ($summary as $row) {
                                         <?= e(RegistrationService::fullName($participant)) ?> présent le
                                         <?= e((string) ($day['label'] ?? $day['day_date'])) ?>
                                     </label>
-                                    <?php if ($justified): ?>
-                                        <br><span class="badge badge--info"
-                                                  style="font-size: 0.65rem; padding: 0 0.3rem;"
-                                                  title="<?= e((string) ($absence['reason'] ?? '')) ?>">just.</span>
-                                    <?php endif; ?>
                                 </td>
                             <?php endforeach; ?>
 
@@ -186,59 +176,4 @@ foreach ($summary as $row) {
         </div>
     </form>
 
-    <div class="panel mt-4">
-        <h2 style="font-size: 1.125rem;">Préciser le motif d'une absence</h2>
-        <p class="text-muted">
-            Une absence justifiée (certificat médical, mission de service) peut être comptée comme
-            une présence dans le calcul du diplôme&nbsp;: ce comportement se règle dans la
-            <a href="<?= e(url('/admin/configuration')) ?>">configuration</a>.
-            Actuellement, les absences justifiées sont
-            <strong><?= $justifiedCountsPresent ? 'comptées comme des présences' : 'comptées comme des absences' ?></strong>.
-        </p>
-
-        <form method="post" action="<?= e(url('/admin/presences/motif')) ?>" class="mt-3">
-            <?= Csrf::field() ?>
-
-            <div class="form-grid form-grid--2">
-                <div class="form-field">
-                    <label class="form-label" for="registration_id">Participant</label>
-                    <select class="form-select" id="registration_id" name="registration_id" required>
-                        <option value="">— Choisir —</option>
-                        <?php foreach ($participants as $participant): ?>
-                            <option value="<?= e((string) $participant['id']) ?>">
-                                <?= e(RegistrationService::fullName($participant)) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label class="form-label" for="training_day_id">Créneau</label>
-                    <select class="form-select" id="training_day_id" name="training_day_id" required>
-                        <option value="">— Choisir —</option>
-                        <?php foreach ($days as $day): ?>
-                            <option value="<?= e((string) $day['id']) ?>">
-                                <?= e((string) ($day['label'] ?? $day['day_date'])) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-field form-field--full">
-                    <label class="form-label" for="reason">Motif</label>
-                    <input class="form-control" type="text" id="reason" name="reason" maxlength="255"
-                           placeholder="Certificat médical transmis, mission de service…">
-                </div>
-
-                <div class="form-field">
-                    <div class="form-check">
-                        <input type="checkbox" id="is_justified" name="is_justified" value="1" checked>
-                        <label for="is_justified">Absence justifiée</label>
-                    </div>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn--ghost btn--sm mt-2">Enregistrer le motif</button>
-        </form>
-    </div>
 <?php endif; ?>

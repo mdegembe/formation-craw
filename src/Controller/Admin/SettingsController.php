@@ -84,12 +84,6 @@ final class SettingsController extends AdminController
             10
         ), 'string');
 
-        Settings::set(
-            'attendance.justified_counts_present',
-            $request->boolean('justified_counts_present'),
-            'bool'
-        );
-
         $iban = (string) ($request->input('iban') ?? '');
 
         if ($iban !== '' && !SepaQrPayload::isValidIban($iban)) {

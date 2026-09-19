@@ -132,22 +132,17 @@ T::same(140, mb_strlen(explode("\n", SepaQrPayload::build(
 
 T::suite('Calcul du taux de présence (présomption de présence)');
 
+// La présence est binaire : présent ou absent, sans motif ni exception.
+
 T::same(1.0, AttendanceCalculator::rate(10, 0), 'aucune absence donne 100 %');
 T::same(0.8, AttendanceCalculator::rate(10, 2), '2 absences sur 10 créneaux donnent 80 %');
 T::same(0.0, AttendanceCalculator::rate(10, 10), 'toutes absences donnent 0 %');
 T::same(0.0, AttendanceCalculator::rate(0, 0), 'sans créneau, le taux est nul plutôt qu\'une division par zéro');
 T::same(0.0, AttendanceCalculator::rate(10, 15), 'plus d\'absences que de créneaux plafonne à 0 %');
 
-T::same(
-    0.8,
-    AttendanceCalculator::rate(10, 1, 1, false),
-    'une absence justifiée pénalise quand le paramètre l\'exige'
-);
-T::same(
-    0.9,
-    AttendanceCalculator::rate(10, 1, 1, true),
-    'une absence justifiée est neutralisée quand le paramètre l\'autorise'
-);
+T::same(0.9, AttendanceCalculator::rate(10, 1), 'une seule absence retire un créneau, sans exception');
+T::same(0.5, AttendanceCalculator::rate(10, 5), 'la moitié des créneaux manqués donne 50 %');
+T::same(1.0, AttendanceCalculator::rate(10, -3), 'un nombre d\'absences négatif est ignoré');
 
 T::same(8, AttendanceCalculator::presentSlots(10, 2), 'le nombre de créneaux présents est cohérent');
 T::same(0, AttendanceCalculator::presentSlots(10, 99), 'le nombre de créneaux présents ne devient jamais négatif');

@@ -103,7 +103,7 @@ final class ExportService
      *
      * @param array<int, array<string, mixed>> $summary
      * @param array<int, array<string, mixed>> $days
-     * @param array<int, array<int, array{is_justified: bool, reason: string|null}>> $absences
+     * @param array<int, array<int, true>> $absences
      */
     public static function attendanceCsv(array $summary, array $days, array $absences): string
     {
@@ -118,7 +118,7 @@ final class ExportService
             'Créneaux totaux',
             'Taux de présence',
             'Éligible au diplôme',
-            'Motif',
+            'Motif (si non éligible)',
         ]);
 
         $rows = [];
@@ -134,11 +134,7 @@ final class ExportService
             ];
 
             foreach ($days as $day) {
-                $absence = $absences[$registrationId][(int) $day['id']] ?? null;
-
-                $row[] = $absence === null
-                    ? 'Présent'
-                    : ($absence['is_justified'] ? 'Absent (justifié)' : 'Absent');
+                $row[] = isset($absences[$registrationId][(int) $day['id']]) ? 'Absent' : 'Présent';
             }
 
             $row = array_merge($row, [

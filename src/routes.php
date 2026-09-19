@@ -103,7 +103,6 @@ $router->post('/admin/paiements/relancer', [PaymentAdminController::class, 'remi
 
 $router->get('/admin/presences', [AttendanceController::class, 'index'], $admin);
 $router->post('/admin/presences', [AttendanceController::class, 'save'], $admin);
-$router->post('/admin/presences/motif', [AttendanceController::class, 'saveReason'], $admin);
 $router->get('/admin/presences/export', [AttendanceController::class, 'export'], $admin);
 $router->get('/admin/presences/emargement.pdf', [AttendanceController::class, 'signatureSheet'], $admin);
 

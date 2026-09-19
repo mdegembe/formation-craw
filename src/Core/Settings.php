@@ -25,7 +25,6 @@ final class Settings
         'payment.beneficiary' => ['Centre wallon de Recherches agronomiques', 'string'],
         'payment.deadline_days' => ['15', 'int'],
         'payment.reminder_days' => ['7,3', 'string'],
-        'attendance.justified_counts_present' => ['0', 'bool'],
         'contact.email' => ['formation@cra.wallonie.be', 'string'],
         'contact.phone' => ['+32 81 87 40 01', 'string'],
         'privacy.retention_years' => ['3', 'int'],
