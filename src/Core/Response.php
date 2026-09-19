@@ -93,6 +93,25 @@ final class Response
 
     public function send(): void
     {
+        /*
+         * Toute sortie parasite emise avant la reponse (avertissement de PHP,
+         * espace de fin de fichier dans un gabarit) corromprait une image, un
+         * PDF ou un CSV. On la retire, en la journalisant pour ne pas masquer
+         * le probleme.
+         */
+        $stray = '';
+
+        while (ob_get_level() > 0) {
+            $stray = (string) ob_get_clean() . $stray;
+        }
+
+        if (trim($stray) !== '') {
+            Logger::warning('Sortie parasite interceptée avant l\'envoi de la réponse.', [
+                'excerpt' => mb_substr(trim($stray), 0, 300),
+                'content_type' => $this->headers['Content-Type'] ?? '',
+            ]);
+        }
+
         if (!headers_sent()) {
             http_response_code($this->status);
 

@@ -153,7 +153,9 @@ $amount = money($amountCents, (string) $training['currency']);
                             Scannez ce QR code avec votre application bancaire&nbsp;:
                             le virement est pré-rempli.
                         </p>
-                        <img src="<?= e($qrUrl) ?>" width="420" height="420" loading="lazy"
+<?php /* Chargement prioritaire : le QR est l'élément central de cette page. */ ?>
+                        <img src="<?= e($qrUrl) ?>" width="420" height="420"
+                             fetchpriority="high" decoding="async"
                              alt="QR code de virement SEPA pour l'inscription <?= e((string) $registration['reference']) ?>">
                         <p class="small text-muted mt-2 mb-0">
                             Format standard européen EPC069-12, reconnu par la plupart des

@@ -14,14 +14,17 @@ date_default_timezone_set(Config::get('APP_TIMEZONE', 'Europe/Brussels') ?? 'Eur
 mb_internal_encoding('UTF-8');
 mb_http_output('UTF-8');
 
+/*
+ * Les depreciations sont exclues du rapport d'erreurs.
+ *
+ * Elles proviennent des dependances, pas du code applicatif, et certaines sont
+ * emises a la compilation d'un fichier : elles echappent alors au gestionnaire
+ * d'erreurs et s'inserteraient dans la reponse, corrompant une image ou un PDF.
+ */
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
 // En production, aucune erreur n'est affichee : elles partent dans le journal.
-if (Config::isDebug()) {
-    error_reporting(E_ALL);
-    ini_set('display_errors', '1');
-} else {
-    error_reporting(E_ALL);
-    ini_set('display_errors', '0');
-}
+ini_set('display_errors', Config::isDebug() ? '1' : '0');
 
 ini_set('log_errors', '1');
 
