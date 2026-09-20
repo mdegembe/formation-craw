@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Craw\Repository;
 
 use Craw\Core\Database;
+use Craw\Core\Locale;
 
 final class PaymentRepository
 {
@@ -121,8 +122,21 @@ final class PaymentRepository
         );
     }
 
-    public static function statusLabel(string $status): string
+    public static function statusLabel(string $status, ?string $locale = null): string
     {
+        if (($locale ?? Locale::current()) === 'en') {
+            return match ($status) {
+                'unpaid' => 'Pending',
+                'reminded' => 'Reminded',
+                'partial' => 'Partial',
+                'paid' => 'Paid',
+                'refunded' => 'Refunded',
+                'waived' => 'Waived',
+                'cancelled' => 'Cancelled',
+                default => $status,
+            };
+        }
+
         return match ($status) {
             'unpaid' => 'En attente',
             'reminded' => 'Relancé',

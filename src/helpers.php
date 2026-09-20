@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Craw\Core\Config;
+use Craw\Core\Locale;
 use Craw\Core\Settings;
+use Craw\Core\Translator;
 
 if (!function_exists('base_path')) {
     function base_path(string $path = ''): string
@@ -30,13 +32,37 @@ if (!function_exists('e')) {
 }
 
 if (!function_exists('url')) {
-    function url(string $path = '/'): string
+    /**
+     * @param string|null $locale Force une langue precise (utile hors requete,
+     *                            par exemple au moment de composer un courriel).
+     *                            Par defaut, la langue de la requete en cours.
+     */
+    function url(string $path = '/', ?string $locale = null): string
     {
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             return $path;
         }
 
-        return Config::appUrl() . '/' . ltrim($path, '/');
+        $path = '/' . ltrim($path, '/');
+
+        if (Locale::requiresPrefix($path)) {
+            $suffix = $path === '/' ? '' : $path;
+            $path = '/' . ($locale ?? Locale::current()) . $suffix;
+        }
+
+        return Config::appUrl() . $path;
+    }
+}
+
+if (!function_exists('t')) {
+    /**
+     * Chaine d'interface traduite (validation, messages flash, erreurs).
+     *
+     * @param array<string, string|int> $replace
+     */
+    function t(string $key, array $replace = [], ?string $locale = null): string
+    {
+        return Translator::get($key, $replace, $locale);
     }
 }
 
@@ -60,12 +86,22 @@ if (!function_exists('setting')) {
 }
 
 if (!function_exists('money')) {
-    /** Formate un montant exprime en centimes. */
+    /** Formate un montant exprime en centimes, a la francaise (ex. « 450,00 € »). */
     function money(int $cents, string $currency = 'EUR'): string
     {
         $symbol = $currency === 'EUR' ? '€' : $currency;
 
         return number_format($cents / 100, 2, ',', "\u{202F}") . "\u{202F}" . $symbol;
+    }
+}
+
+if (!function_exists('money_en')) {
+    /** Formate un montant exprime en centimes, a l'anglaise (ex. « €450.00 »). */
+    function money_en(int $cents, string $currency = 'EUR'): string
+    {
+        $symbol = $currency === 'EUR' ? '€' : $currency;
+
+        return $symbol . number_format($cents / 100, 2, '.', ',');
     }
 }
 
@@ -118,6 +154,47 @@ if (!function_exists('fr_datetime')) {
     }
 }
 
+if (!function_exists('en_date')) {
+    /** Date longue en anglais, sans dependre de l'extension intl. */
+    function en_date(string|DateTimeInterface|null $date, bool $withWeekday = false): string
+    {
+        if ($date === null || $date === '') {
+            return '';
+        }
+
+        $value = $date instanceof DateTimeInterface
+            ? $date
+            : new DateTimeImmutable($date, new DateTimeZone(Config::get('APP_TIMEZONE', 'Europe/Brussels') ?? 'UTC'));
+
+        $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $months = [
+            1 => 'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December',
+        ];
+
+        $formatted = sprintf('%d %s %s', (int) $value->format('j'), $months[(int) $value->format('n')], $value->format('Y'));
+
+        if ($withWeekday) {
+            $formatted = $days[(int) $value->format('w')] . ' ' . $formatted;
+        }
+
+        return $formatted;
+    }
+}
+
+if (!function_exists('en_datetime')) {
+    function en_datetime(string|DateTimeInterface|null $date): string
+    {
+        if ($date === null || $date === '') {
+            return '';
+        }
+
+        $value = $date instanceof DateTimeInterface ? $date : new DateTimeImmutable($date);
+
+        return en_date($value) . ' at ' . $value->format('H:i');
+    }
+}
+
 if (!function_exists('str_excerpt')) {
     function str_excerpt(string $text, int $length = 160): string
     {
@@ -131,6 +208,28 @@ if (!function_exists('str_excerpt')) {
         $lastSpace = mb_strrpos($cut, ' ');
 
         return rtrim($lastSpace !== false ? mb_substr($cut, 0, $lastSpace) : $cut, ",;:.- ") . '…';
+    }
+}
+
+if (!function_exists('localized_field')) {
+    /**
+     * Valeur d'un champ traduisible (formation, actualite) : la colonne
+     * {field}_en si la langue courante est l'anglais et qu'elle est
+     * renseignee, sinon la colonne francaise de reference.
+     *
+     * @param array<string, mixed> $record
+     */
+    function localized_field(array $record, string $field): mixed
+    {
+        if (Locale::current() === 'en') {
+            $value = $record[$field . '_en'] ?? null;
+
+            if ($value !== null && $value !== '') {
+                return $value;
+            }
+        }
+
+        return $record[$field] ?? null;
     }
 }
 

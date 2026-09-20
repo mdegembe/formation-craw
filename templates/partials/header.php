@@ -31,6 +31,7 @@ $navigation = [
                 <li><a href="https://www.cra.wallonie.be/fr/annuaire" rel="noopener noreferrer" target="_blank">Annuaire</a></li>
                 <li><a href="https://www.cra.wallonie.be/fr/presse" rel="noopener noreferrer" target="_blank">Presse</a></li>
                 <li><a href="<?= e(url('/contact')) ?>">Nous contacter</a></li>
+                <li><a href="<?= e(\Craw\Core\Locale::switchUrl('en')) ?>" hreflang="en" lang="en">English</a></li>
             </ul>
         </div>
     </div>

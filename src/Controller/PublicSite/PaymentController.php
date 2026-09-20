@@ -30,8 +30,8 @@ final class PaymentController extends BaseController
         $communication = (string) ($registration['structured_communication'] ?? '');
 
         return $this->view('public/payment', [
-            'title' => 'Paiement de votre inscription',
-            'description' => 'Coordonnées bancaires et QR code pour régler votre inscription par virement.',
+            'title' => t('meta.payment_title'),
+            'description' => t('meta.payment_description'),
             'canonical' => url('/'),
             'noindex' => true,
             'registration' => $registration,
@@ -63,7 +63,7 @@ final class PaymentController extends BaseController
         $amountCents = (int) $registration['amount_due_cents'];
 
         if (!SepaQrPayload::isValidIban($iban) || $amountCents <= 0) {
-            $this->notFound('Aucun QR code disponible pour cette inscription.');
+            $this->notFound(t('notfound.qr_unavailable'));
         }
 
         $png = QrService::sepaPng(
@@ -141,7 +141,7 @@ final class PaymentController extends BaseController
         $registration = (new RegistrationRepository())->findByToken($token);
 
         if ($registration === null || (string) $registration['status'] === 'draft') {
-            $this->notFound('Ce lien de paiement n\'est plus valide.');
+            $this->notFound(t('notfound.payment_link'));
         }
 
         $training = (new TrainingRepository())->find((int) $registration['training_id']);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Craw\Domain;
 
+use Craw\Core\Locale;
+
 /**
  * Calcul du taux de presence selon le principe « presume present » (RG-06).
  *
@@ -33,16 +35,16 @@ final class AttendanceCalculator
         return max(0, $totalSlots - max(0, $absences));
     }
 
-    /** Taux formate pour l'affichage, ex. « 90 % ». */
-    public static function format(float $rate): string
+    /** Taux formate pour l'affichage, ex. « 90 % » (ou « 90% » en anglais). */
+    public static function format(float $rate, ?string $locale = null): string
     {
         $percentage = $rate * 100;
+        $decimals = $percentage == (int) $percentage ? 0 : 1;
 
-        return number_format(
-            $percentage,
-            $percentage == (int) $percentage ? 0 : 1,
-            ',',
-            ' '
-        ) . "\u{202F}%";
+        if (($locale ?? Locale::current()) === 'en') {
+            return number_format($percentage, $decimals, '.', ',') . '%';
+        }
+
+        return number_format($percentage, $decimals, ',', ' ') . "\u{202F}%";
     }
 }

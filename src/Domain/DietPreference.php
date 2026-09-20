@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Craw\Domain;
 
+use Craw\Core\Locale;
+
 /**
  * Regimes alimentaires proposes a l'inscription.
  *
@@ -20,8 +22,27 @@ enum DietPreference: string
     case Casher = 'casher';
     case Autre = 'autre';
 
-    public function label(): string
+    /**
+     * Libelle localise. Sans argument, suit la langue de la requete en cours
+     * — correcte aussi bien dans le back-office (toujours francais) que dans
+     * les pages publiques et les courriels (deja regles sur la bonne langue).
+     */
+    public function label(?string $locale = null): string
     {
+        $locale ??= Locale::current();
+
+        if ($locale === 'en') {
+            return match ($this) {
+                self::Standard => 'No restriction',
+                self::Vegetarien => 'Vegetarian',
+                self::Vegan => 'Vegan',
+                self::SansPorc => 'No pork',
+                self::Halal => 'Halal',
+                self::Casher => 'Kosher',
+                self::Autre => 'Other (please specify)',
+            };
+        }
+
         return match ($this) {
             self::Standard => 'Sans restriction',
             self::Vegetarien => 'Végétarien',
@@ -33,8 +54,22 @@ enum DietPreference: string
         };
     }
 
-    public function hint(): string
+    public function hint(?string $locale = null): string
     {
+        $locale ??= Locale::current();
+
+        if ($locale === 'en') {
+            return match ($this) {
+                self::Standard => 'No particular adjustment to the meal.',
+                self::Vegetarien => 'No meat or fish.',
+                self::Vegan => 'No animal products whatsoever.',
+                self::SansPorc => 'Meal excluding pork and pork derivatives.',
+                self::Halal => 'Please specify your requirements in the comment.',
+                self::Casher => 'Please specify your requirements in the comment.',
+                self::Autre => 'Describe your diet in the comment.',
+            };
+        }
+
         return match ($this) {
             self::Standard => 'Aucune adaptation particulière du repas.',
             self::Vegetarien => 'Sans viande ni poisson.',
@@ -82,11 +117,15 @@ enum DietPreference: string
         return array_map(static fn (self $case): string => $case->value, self::cases());
     }
 
-    public static function tryLabel(?string $value): string
+    public static function tryLabel(?string $value, ?string $locale = null): string
     {
         $case = $value === null ? null : self::tryFrom($value);
 
-        return $case?->label() ?? 'Non précisé';
+        if ($case !== null) {
+            return $case->label($locale);
+        }
+
+        return ($locale ?? Locale::current()) === 'en' ? 'Not specified' : 'Non précisé';
     }
 
     public static function tryColor(?string $value): string

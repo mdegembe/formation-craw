@@ -28,9 +28,8 @@ final class NewsController extends BaseController
         }
 
         return $this->view('public/news_index', [
-            'title' => 'Actualités de la formation',
-            'description' => 'Toutes les actualités liées à la formation organisée par le '
-                . 'Centre wallon de Recherches agronomiques.',
+            'title' => t('meta.news_title'),
+            'description' => t('meta.news_description'),
             'canonical' => url('/actualites' . ($page > 1 ? '?page=' . $page : '')),
             'activeNav' => 'actualites',
             'articles' => $repository->published(self::PER_PAGE, ($page - 1) * self::PER_PAGE),
@@ -40,8 +39,8 @@ final class NewsController extends BaseController
             'noindex' => $page > 1,
             'jsonLd' => [
                 SeoService::jsonLdTag(SeoService::breadcrumbJsonLd([
-                    ['label' => 'Accueil', 'url' => '/'],
-                    ['label' => 'Actualités', 'url' => '/actualites'],
+                    ['label' => t('nav.home'), 'url' => '/'],
+                    ['label' => t('nav.news'), 'url' => '/actualites'],
                 ])),
             ],
         ]);
@@ -52,17 +51,19 @@ final class NewsController extends BaseController
         $article = (new NewsRepository())->findPublishedBySlug((string) $params['slug']);
 
         if ($article === null) {
-            $this->notFound('Cette actualité n\'existe pas ou n\'est plus publiée.');
+            $this->notFound(t('notfound.news_article'));
         }
 
-        $description = (string) ($article['meta_description'] ?? $article['excerpt'] ?? '');
+        $title = (string) localized_field($article, 'title');
+        $description = (string) (localized_field($article, 'meta_description') ?? localized_field($article, 'excerpt') ?? '');
+        $body = (string) localized_field($article, 'body');
 
         if ($description === '') {
-            $description = str_excerpt(Markdown::toText((string) $article['body']), 155);
+            $description = str_excerpt(Markdown::toText($body), 155);
         }
 
         return $this->view('public/news_show', [
-            'title' => (string) ($article['meta_title'] ?? $article['title']),
+            'title' => (string) ($article['meta_title'] ?? $title),
             'description' => $description,
             'canonical' => url('/actualites/' . (string) $article['slug']),
             'activeNav' => 'actualites',
@@ -70,7 +71,8 @@ final class NewsController extends BaseController
                 ? url('/media/news/' . (string) $article['cover_path'])
                 : url('assets/img/og-default.svg'),
             'article' => $article,
-            'bodyHtml' => Markdown::toHtml((string) $article['body']),
+            'articleTitle' => $title,
+            'bodyHtml' => Markdown::toHtml($body),
             'related' => array_slice(array_filter(
                 (new NewsRepository())->published(4),
                 static fn (array $item): bool => (int) $item['id'] !== (int) $article['id']
@@ -78,9 +80,9 @@ final class NewsController extends BaseController
             'jsonLd' => [
                 SeoService::jsonLdTag(SeoService::newsJsonLd($article)),
                 SeoService::jsonLdTag(SeoService::breadcrumbJsonLd([
-                    ['label' => 'Accueil', 'url' => '/'],
-                    ['label' => 'Actualités', 'url' => '/actualites'],
-                    ['label' => (string) $article['title'], 'url' => '/actualites/' . (string) $article['slug']],
+                    ['label' => t('nav.home'), 'url' => '/'],
+                    ['label' => t('nav.news'), 'url' => '/actualites'],
+                    ['label' => $title, 'url' => '/actualites/' . (string) $article['slug']],
                 ])),
             ],
         ]);

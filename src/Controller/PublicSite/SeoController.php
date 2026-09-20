@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Craw\Controller\PublicSite;
 
 use Craw\Controller\BaseController;
+use Craw\Core\Locale;
 use Craw\Core\Request;
 use Craw\Core\Response;
 use Craw\Repository\NewsRepository;
@@ -40,22 +41,38 @@ final class SeoController extends BaseController
             ];
         }
 
+        // Chaque page publique existe en francais et en anglais (voir Locale) :
+        // les deux URLs sont listees, chacune renvoyant vers son alternative
+        // par un lien hreflang, comme recommande par Google.
         $urls = [];
 
         foreach ($entries as [$path, $priority, $frequency, $lastmod]) {
-            $urls[] = sprintf(
-                "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n"
-                . "    <changefreq>%s</changefreq>\n    <priority>%s</priority>\n  </url>",
-                e(url($path)),
-                e($lastmod),
-                $frequency,
-                $priority
-            );
+            $alternates = '';
+            foreach (Locale::SUPPORTED as $altLocale) {
+                $alternates .= sprintf(
+                    "\n    <xhtml:link rel=\"alternate\" hreflang=\"%s\" href=\"%s\"/>",
+                    $altLocale,
+                    e(url($path, $altLocale))
+                );
+            }
+
+            foreach (Locale::SUPPORTED as $locale) {
+                $urls[] = sprintf(
+                    "  <url>\n    <loc>%s</loc>%s\n    <lastmod>%s</lastmod>\n"
+                    . "    <changefreq>%s</changefreq>\n    <priority>%s</priority>\n  </url>",
+                    e(url($path, $locale)),
+                    $alternates,
+                    e($lastmod),
+                    $frequency,
+                    $priority
+                );
+            }
         }
 
         $xml = sprintf(
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            . "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n%s\n</urlset>\n",
+            . "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" "
+            . "xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n%s\n</urlset>\n",
             implode("\n", $urls)
         );
 
@@ -68,18 +85,28 @@ final class SeoController extends BaseController
             'User-agent: *',
             'Allow: /',
             '',
-            '# Espaces privés et pages personnelles : jamais indexés.',
+            '# Espaces privés et pages personnelles : jamais indexés (les deux langues).',
             'Disallow: /admin',
-            'Disallow: /mon-inscription/',
-            'Disallow: /inscription/paiement/',
-            'Disallow: /inscription/recapitulatif/',
-            'Disallow: /inscription/preferences/',
-            'Disallow: /diplome/',
             'Disallow: /cron/',
-            '',
-            'Sitemap: ' . url('/sitemap.xml'),
-            '',
         ];
+
+        $private = [
+            '/mon-inscription/',
+            '/inscription/paiement/',
+            '/inscription/recapitulatif/',
+            '/inscription/preferences/',
+            '/diplome/',
+        ];
+
+        foreach (Locale::SUPPORTED as $locale) {
+            foreach ($private as $path) {
+                $lines[] = 'Disallow: /' . $locale . $path;
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = 'Sitemap: ' . url('/sitemap.xml');
+        $lines[] = '';
 
         return Response::text(implode("\n", $lines));
     }

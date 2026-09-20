@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Craw\Service;
 
 use Craw\Core\Database;
+use Craw\Core\Locale;
 use Craw\Core\Logger;
 use Craw\Core\Mailer;
 use Craw\Core\View;
@@ -133,6 +134,11 @@ final class MailQueue
 
         $payload['subject'] = $subject;
         $payload['recipientName'] = (string) ($message['to_name'] ?? '');
+
+        // La langue est celle figee au moment de la mise en file (voir
+        // Notifier::payload()), pas celle de la requete en cours : ce code
+        // tourne souvent depuis le cron, hors de toute requete web.
+        Locale::set((string) ($payload['locale'] ?? Locale::DEFAULT));
 
         $html = View::render('emails/' . $template, $payload);
         $text = View::partial('emails/text/' . $template, $payload);

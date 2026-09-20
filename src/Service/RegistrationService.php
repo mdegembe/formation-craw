@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Craw\Service;
 
 use Craw\Core\Database;
+use Craw\Core\Locale;
 use Craw\Core\Settings;
 use Craw\Domain\StructuredCommunication;
 use Craw\Repository\PaymentRepository;
@@ -179,8 +180,20 @@ final class RegistrationService
         );
     }
 
-    public static function statusLabel(string $status): string
+    /** Suit la langue de la requete en cours (francais en back-office, choisie sur le site public). */
+    public static function statusLabel(string $status, ?string $locale = null): string
     {
+        if (($locale ?? Locale::current()) === 'en') {
+            return match ($status) {
+                'draft' => 'Draft',
+                'pending_payment' => 'Awaiting payment',
+                'confirmed' => 'Confirmed',
+                'waitlist' => 'Waiting list',
+                'cancelled' => 'Cancelled',
+                default => $status,
+            };
+        }
+
         return match ($status) {
             'draft' => 'Brouillon',
             'pending_payment' => 'En attente de paiement',

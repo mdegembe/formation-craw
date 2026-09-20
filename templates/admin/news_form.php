@@ -96,6 +96,46 @@ $value = static function (string $key, string $default = '') use ($old, $article
     </div>
 
     <div class="panel mb-3">
+        <h2 style="font-size: 1.125rem;">Contenu (anglais)</h2>
+        <p class="form-hint mb-3">
+            Facultatif. Laissé vide, l'article reste affiché en français sur la version anglaise
+            du site.
+        </p>
+
+        <div class="form-grid mt-3">
+            <div class="form-field">
+                <label class="form-label" for="title_en">Title</label>
+                <input class="form-control" type="text" id="title_en" name="title_en" maxlength="190"
+                       value="<?= e($value('title_en')) ?>"
+                    <?= isset($errors['title_en']) ? 'aria-invalid="true" aria-describedby="title_en-error"' : '' ?>>
+                <?= View::partial('partials/field_error', ['errors' => $errors, 'field' => 'title_en']) ?>
+            </div>
+
+            <div class="form-field">
+                <label class="form-label" for="excerpt_en">Excerpt</label>
+                <textarea class="form-control" id="excerpt_en" name="excerpt_en" rows="2" maxlength="500"
+                ><?= e($value('excerpt_en')) ?></textarea>
+                <?= View::partial('partials/field_error', ['errors' => $errors, 'field' => 'excerpt_en']) ?>
+            </div>
+
+            <div class="form-field">
+                <label class="form-label" for="body_en">Article body</label>
+                <textarea class="form-control" id="body_en" name="body_en" rows="16"
+                          style="font-family: var(--craw-font-mono); font-size: 0.9375rem;"
+                ><?= e($value('body_en')) ?></textarea>
+                <p class="form-hint">Same Markdown formatting as the French text above.</p>
+            </div>
+
+            <div class="form-field">
+                <label class="form-label" for="meta_description_en">SEO description</label>
+                <textarea class="form-control" id="meta_description_en" name="meta_description_en"
+                          rows="2" maxlength="255"><?= e($value('meta_description_en')) ?></textarea>
+                <?= View::partial('partials/field_error', ['errors' => $errors, 'field' => 'meta_description_en']) ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel mb-3">
         <h2 style="font-size: 1.125rem;">Image de couverture</h2>
 
         <?php if ($isEdit && !empty($article['cover_path'])): ?>

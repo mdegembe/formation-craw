@@ -80,7 +80,19 @@ final class View
      */
     private static function evaluate(string $template, array $data): string
     {
-        $file = base_path('templates/' . trim($template, '/') . '.php');
+        $template = trim($template, '/');
+        $file = base_path('templates/' . $template . '.php');
+
+        // Un gabarit peut avoir une variante par langue (page.en.php a cote de
+        // page.php, qui reste la version francaise de reference). A defaut de
+        // variante, la version francaise sert de repli.
+        $locale = Locale::current();
+        if ($locale !== Locale::DEFAULT) {
+            $localized = base_path('templates/' . $template . '.' . $locale . '.php');
+            if (is_file($localized)) {
+                $file = $localized;
+            }
+        }
 
         if (!is_file($file)) {
             throw new RuntimeException(sprintf('Gabarit introuvable : "%s".', $template));

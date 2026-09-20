@@ -47,7 +47,7 @@ final class Validator
     public function required(string $field, string $label): self
     {
         if ($this->value($field) === null) {
-            $this->fail($field, sprintf('Le champ « %s » est obligatoire.', $label));
+            $this->fail($field, t('validation.required', ['label' => $label]));
         } else {
             $this->validated[$field] = $this->value($field);
         }
@@ -67,7 +67,7 @@ final class Validator
         $value = $this->value($field);
 
         if ($value !== null && mb_strlen($value) < $min) {
-            $this->fail($field, sprintf('Le champ « %s » doit comporter au moins %d caracteres.', $label, $min));
+            $this->fail($field, t('validation.min_length', ['label' => $label, 'min' => $min]));
         }
 
         return $this;
@@ -78,7 +78,7 @@ final class Validator
         $value = $this->value($field);
 
         if ($value !== null && mb_strlen($value) > $max) {
-            $this->fail($field, sprintf('Le champ « %s » ne peut pas depasser %d caracteres.', $label, $max));
+            $this->fail($field, t('validation.max_length', ['label' => $label, 'max' => $max]));
         }
 
         return $this;
@@ -93,7 +93,7 @@ final class Validator
         }
 
         if (filter_var($value, FILTER_VALIDATE_EMAIL) === false || mb_strlen($value) > 190) {
-            $this->fail($field, sprintf('Le champ « %s » doit contenir une adresse e-mail valide.', $label));
+            $this->fail($field, t('validation.email', ['label' => $label]));
 
             return $this;
         }
@@ -114,7 +114,7 @@ final class Validator
         $digits = preg_replace('/[^0-9]/', '', $value) ?? '';
 
         if (mb_strlen($digits) < 8 || mb_strlen($digits) > 15) {
-            $this->fail($field, sprintf('Le champ « %s » doit contenir un numero de telephone valide.', $label));
+            $this->fail($field, t('validation.phone', ['label' => $label]));
         }
 
         return $this;
@@ -128,7 +128,7 @@ final class Validator
         $value = $this->value($field);
 
         if ($value !== null && !in_array($value, $allowed, true)) {
-            $this->fail($field, sprintf('La valeur choisie pour « %s » n\'est pas valide.', $label));
+            $this->fail($field, t('validation.in', ['label' => $label]));
         }
 
         return $this;
@@ -145,7 +145,7 @@ final class Validator
         $date = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
 
         if ($date === false || $date->format('Y-m-d') !== $value) {
-            $this->fail($field, sprintf('Le champ « %s » doit contenir une date valide.', $label));
+            $this->fail($field, t('validation.date', ['label' => $label]));
         }
 
         return $this;
@@ -174,7 +174,7 @@ final class Validator
         $normalised = strtoupper((string) preg_replace('/[^A-Z0-9]/i', '', $value));
 
         if (preg_match('/^[A-Z]{2}[A-Z0-9]{8,12}$/', $normalised) !== 1) {
-            $this->fail($field, sprintf('Le champ « %s » doit contenir un numero de TVA valide (ex. BE0123456789).', $label));
+            $this->fail($field, t('validation.vat_number', ['label' => $label]));
 
             return $this;
         }
@@ -187,7 +187,7 @@ final class Validator
     public function requiredIf(string $field, string $label, bool $condition): self
     {
         if ($condition && $this->value($field) === null) {
-            $this->fail($field, sprintf('Le champ « %s » est obligatoire.', $label));
+            $this->fail($field, t('validation.required', ['label' => $label]));
         }
 
         return $this;

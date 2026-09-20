@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Craw\Core\Locale;
 use Craw\Core\View;
 
 /**
@@ -34,6 +35,8 @@ $fullTitle = str_contains($title, 'CRA-W') ? $title : $title . ' | Formation CRA
     <title><?= e($fullTitle) ?></title>
     <meta name="description" content="<?= e(str_excerpt($description, 155)) ?>">
     <link rel="canonical" href="<?= e($canonical) ?>">
+    <link rel="alternate" hreflang="fr" href="<?= e(Locale::switchUrl('fr')) ?>">
+    <link rel="alternate" hreflang="en" href="<?= e(Locale::switchUrl('en')) ?>">
     <?php if ($noindex): ?>
         <meta name="robots" content="noindex, follow">
     <?php else: ?>

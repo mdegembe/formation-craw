@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./.env:/app/.env
+      - ./storage:/app/storage
+    networks:
+      - default
+      - proxy
+
+networks:
+  default:
+  proxy:
+    external: true

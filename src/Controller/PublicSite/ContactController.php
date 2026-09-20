@@ -21,8 +21,8 @@ final class ContactController extends BaseController
     public function show(Request $request, array $params): Response
     {
         return $this->view('public/contact', [
-            'title' => 'Contact',
-            'description' => 'Contactez l\'équipe organisatrice de la formation du CRA-W à Gembloux.',
+            'title' => t('meta.contact_title'),
+            'description' => t('meta.contact_description'),
             'canonical' => url('/contact'),
             'activeNav' => 'contact',
             'training' => (new TrainingRepository())->current(),
@@ -40,7 +40,7 @@ final class ContactController extends BaseController
         if (($request->input('website') ?? '') !== '') {
             Logger::warning('Message de contact rejete (honeypot).', ['ip' => $request->ipHash()]);
 
-            Session::flash('success', 'Votre message a bien été transmis.');
+            Session::flash('success', t('flash.contact_success'));
 
             return $this->redirect('/contact');
         }
@@ -49,16 +49,15 @@ final class ContactController extends BaseController
         unset($input['_token'], $input['website']);
 
         $validator = Validator::make($input)
-            ->required('name', 'Nom')->maxLength('name', 'Nom', 150)
-            ->required('email', 'Adresse e-mail')->email('email', 'Adresse e-mail')
-            ->required('subject', 'Objet')->maxLength('subject', 'Objet', 190)
-            ->required('message', 'Message')
-            ->minLength('message', 'Message', 10)
-            ->maxLength('message', 'Message', 3000);
+            ->required('name', t('field.name'))->maxLength('name', t('field.name'), 150)
+            ->required('email', t('field.email'))->email('email', t('field.email'))
+            ->required('subject', t('field.subject'))->maxLength('subject', t('field.subject'), 190)
+            ->required('message', t('field.message'))
+            ->minLength('message', t('field.message'), 10)
+            ->maxLength('message', t('field.message'), 3000);
 
         if ($validator->fails()) {
-            return $this->back('/contact', $validator->errors(), $input,
-                'Merci de corriger les erreurs du formulaire.');
+            return $this->back('/contact', $validator->errors(), $input, t('validation.form_errors_short'));
         }
 
         $name = (string) $request->input('name');
@@ -92,7 +91,7 @@ final class ContactController extends BaseController
             );
         }
 
-        Session::flash('success', 'Votre message a bien été transmis. Nous vous répondrons dans les meilleurs délais.');
+        Session::flash('success', t('flash.contact_success_full'));
 
         return $this->redirect('/contact');
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Craw\Controller\PublicSite;
 
 use Craw\Controller\BaseController;
+use Craw\Core\Locale;
 use Craw\Core\Request;
 use Craw\Core\Response;
 use Craw\Core\Settings;
@@ -23,22 +24,23 @@ final class PageController extends BaseController
             $this->notFound();
         }
 
+        $dateFormatter = Locale::current() === 'en' ? 'en_date' : 'fr_date';
+
         return $this->view('public/programme', [
-            'title' => 'Programme de la formation',
-            'description' => sprintf(
-                'Déroulé jour par jour de la formation CRA-W, du %s au %s à %s.',
-                fr_date((string) $training['starts_on']),
-                fr_date((string) $training['ends_on']),
-                (string) $training['location_name']
-            ),
+            'title' => t('meta.programme_title'),
+            'description' => t('meta.programme_description', [
+                'start' => $dateFormatter((string) $training['starts_on']),
+                'end' => $dateFormatter((string) $training['ends_on']),
+                'location' => (string) $training['location_name'],
+            ]),
             'canonical' => url('/programme'),
             'activeNav' => 'programme',
             'training' => $training,
             'days' => $trainings->daysGrouped((int) $training['id']),
             'jsonLd' => [
                 SeoService::jsonLdTag(SeoService::breadcrumbJsonLd([
-                    ['label' => 'Accueil', 'url' => '/'],
-                    ['label' => 'Programme', 'url' => '/programme'],
+                    ['label' => t('nav.home'), 'url' => '/'],
+                    ['label' => t('nav.programme'), 'url' => '/programme'],
                 ])),
             ],
         ]);
@@ -56,19 +58,18 @@ final class PageController extends BaseController
         $faq = $this->faq($training);
 
         return $this->view('public/practical', [
-            'title' => 'Informations pratiques',
-            'description' => 'Accès, repas, hébergement, tarif et conditions d\'annulation '
-                . 'de la formation organisée par le CRA-W à Gembloux.',
+            'title' => t('meta.practical_title'),
+            'description' => t('meta.practical_description'),
             'canonical' => url('/infos-pratiques'),
             'activeNav' => 'infos',
             'training' => $training,
-            'practicalHtml' => Markdown::toHtml((string) ($training['practical_info'] ?? '')),
+            'practicalHtml' => Markdown::toHtml((string) (localized_field($training, 'practical_info') ?? '')),
             'faq' => $faq,
             'jsonLd' => [
                 SeoService::jsonLdTag(SeoService::faqJsonLd($faq)),
                 SeoService::jsonLdTag(SeoService::breadcrumbJsonLd([
-                    ['label' => 'Accueil', 'url' => '/'],
-                    ['label' => 'Infos pratiques', 'url' => '/infos-pratiques'],
+                    ['label' => t('nav.home'), 'url' => '/'],
+                    ['label' => t('nav.practical'), 'url' => '/infos-pratiques'],
                 ])),
             ],
         ]);
@@ -86,43 +87,28 @@ final class PageController extends BaseController
 
         return [
             [
-                'question' => 'Dois-je créer un compte pour m\'inscrire ?',
-                'answer' => 'Non. L\'inscription se fait en une seule fois, sans création de compte. '
-                    . 'Vous recevez ensuite un lien personnel par courriel qui vous permet de retrouver '
-                    . 'votre inscription, vos instructions de paiement et, en fin de formation, votre diplôme.',
+                'question' => t('faq.account.question'),
+                'answer' => t('faq.account.answer'),
             ],
             [
-                'question' => 'Comment se déroule le paiement ?',
+                'question' => t('faq.payment.question'),
                 'answer' => $price <= 0
-                    ? 'La participation à cette session est gratuite : aucun paiement ne vous sera demandé.'
-                    : sprintf(
-                        'Le paiement s\'effectue par virement bancaire, dans les %d jours suivant votre '
-                        . 'inscription. Vous recevez les coordonnées bancaires, une communication structurée '
-                        . 'unique et un QR code permettant de pré-remplir le virement depuis votre application '
-                        . 'bancaire. Votre inscription est définitivement confirmée à réception du paiement.',
-                        $deadlineDays
-                    ),
+                    ? t('faq.payment.answer_free')
+                    : t('faq.payment.answer', ['days' => $deadlineDays]),
             ],
             [
-                'question' => 'Les repas sont-ils compris ?',
-                'answer' => 'Oui. Les pauses café et les repas de midi sont inclus dans le prix. '
-                    . 'Le formulaire d\'inscription vous permet de signaler votre régime alimentaire '
-                    . 'ainsi que vos allergies ou intolérances : ces informations sont transmises au traiteur.',
+                'question' => t('faq.meals.question'),
+                'answer' => t('faq.meals.answer'),
             ],
             [
-                'question' => 'Obtiendrai-je un certificat de participation ?',
-                'answer' => sprintf(
-                    'Oui, un diplôme de participation au format PDF est délivré aux participants ayant '
-                    . 'assisté à au moins %s des créneaux de la formation. Il est envoyé par courriel '
-                    . 'à l\'issue de la session.',
-                    \Craw\Domain\AttendanceCalculator::format(Settings::minAttendanceRate())
-                ),
+                'question' => t('faq.diploma.question'),
+                'answer' => t('faq.diploma.answer', [
+                    'rate' => \Craw\Domain\AttendanceCalculator::format(Settings::minAttendanceRate()),
+                ]),
             ],
             [
-                'question' => 'Puis-je annuler mon inscription ?',
-                'answer' => 'Toute annulation communiquée par écrit plus de 15 jours avant le début de la '
-                    . 'formation donne lieu à un remboursement intégral. Passé ce délai, l\'inscription peut '
-                    . 'être transférée à un collègue sans frais.',
+                'question' => t('faq.cancel.question'),
+                'answer' => t('faq.cancel.answer'),
             ],
         ];
     }
@@ -130,8 +116,8 @@ final class PageController extends BaseController
     public function legal(Request $request, array $params): Response
     {
         return $this->view('public/legal', [
-            'title' => 'Mentions légales',
-            'description' => 'Mentions légales du site d\'inscription à la formation du CRA-W.',
+            'title' => t('meta.legal_title'),
+            'description' => t('meta.legal_description'),
             'canonical' => url('/mentions-legales'),
         ]);
     }
@@ -139,9 +125,8 @@ final class PageController extends BaseController
     public function privacy(Request $request, array $params): Response
     {
         return $this->view('public/privacy', [
-            'title' => 'Déclaration de confidentialité',
-            'description' => 'Traitement de vos données personnelles dans le cadre de l\'inscription '
-                . 'à la formation du CRA-W : finalités, durées de conservation et droits.',
+            'title' => t('meta.privacy_title'),
+            'description' => t('meta.privacy_description'),
             'canonical' => url('/confidentialite'),
             'retentionYears' => (int) Settings::get('privacy.retention_years', 3),
         ]);
@@ -150,8 +135,8 @@ final class PageController extends BaseController
     public function accessibility(Request $request, array $params): Response
     {
         return $this->view('public/accessibility', [
-            'title' => 'Déclaration d\'accessibilité',
-            'description' => 'Déclaration d\'accessibilité du site d\'inscription à la formation du CRA-W.',
+            'title' => t('meta.accessibility_title'),
+            'description' => t('meta.accessibility_description'),
             'canonical' => url('/accessibilite'),
         ]);
     }

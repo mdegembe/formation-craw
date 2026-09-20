@@ -167,22 +167,29 @@ $csrf = static function (string $html): string {
 
 T::suite('Pages publiques');
 
+// Un visiteur sans prefixe de langue est redirige (Accept-Language absent : francais par defaut).
+$rootRedirect = $request('GET', '/');
+T::same(302, $rootRedirect['status'], 'la racine sans langue redirige');
+T::contains('/fr', $rootRedirect['location'], 'la redirection par defaut mene au francais');
+
 foreach ([
-    '/' => 'accueil',
-    '/programme' => 'programme',
-    '/infos-pratiques' => 'infos pratiques',
-    '/actualites' => 'actualités',
-    '/contact' => 'contact',
-    '/inscription' => 'inscription',
-    '/mentions-legales' => 'mentions légales',
-    '/confidentialite' => 'confidentialité',
-    '/accessibilite' => 'accessibilité',
+    '/fr' => 'accueil',
+    '/fr/programme' => 'programme',
+    '/fr/infos-pratiques' => 'infos pratiques',
+    '/fr/actualites' => 'actualités',
+    '/fr/contact' => 'contact',
+    '/fr/inscription' => 'inscription',
+    '/fr/mentions-legales' => 'mentions légales',
+    '/fr/confidentialite' => 'confidentialité',
+    '/fr/accessibilite' => 'accessibilité',
+    '/en' => 'home (English)',
+    '/en/programme' => 'programme (English)',
 ] as $path => $label) {
     $response = $request('GET', $path);
     T::same(200, $response['status'], "la page « {$label} » répond 200");
 }
 
-$home = $request('GET', '/');
+$home = $request('GET', '/fr');
 T::contains('EducationEvent', $home['body'], 'la page d\'accueil expose un JSON-LD EducationEvent');
 T::contains('<h1', $home['body'], 'la page d\'accueil comporte un titre de niveau 1');
 T::contains('canonical', $home['body'], 'la page d\'accueil déclare une URL canonique');
@@ -192,26 +199,34 @@ T::same(
     'la page d\'accueil ne comporte qu\'un seul titre de niveau 1'
 );
 
+$homeEn = $request('GET', '/en');
+T::contains('<html lang="en"', $homeEn['body'], 'la version anglaise déclare lang="en"');
+T::contains('Register', $homeEn['body'], 'la version anglaise affiche du texte en anglais');
+
 T::same(404, $request('GET', '/page-inexistante')['status'], 'une URL inconnue répond 404');
+T::same(404, $request('GET', '/fr/page-inexistante')['status'], 'une URL francaise inconnue répond 404');
 
 $sitemap = $request('GET', '/sitemap.xml');
 T::same(200, $sitemap['status'], 'le sitemap répond 200');
 T::contains('<urlset', $sitemap['body'], 'le sitemap est un urlset valide');
-T::contains('/programme', $sitemap['body'], 'le sitemap référence la page programme');
+T::contains('/fr/programme', $sitemap['body'], 'le sitemap référence la page programme en français');
+T::contains('/en/programme', $sitemap['body'], 'le sitemap référence la page programme en anglais');
+T::contains('hreflang="en"', $sitemap['body'], 'le sitemap déclare les alternatives de langue');
 
 $robots = $request('GET', '/robots.txt');
 T::contains('Sitemap:', $robots['body'], 'robots.txt déclare le sitemap');
 T::contains('Disallow: /admin', $robots['body'], 'robots.txt exclut le back-office');
-T::contains('Disallow: /mon-inscription/', $robots['body'], 'robots.txt exclut les espaces personnels');
+T::contains('Disallow: /fr/mon-inscription/', $robots['body'], 'robots.txt exclut les espaces personnels (FR)');
+T::contains('Disallow: /en/mon-inscription/', $robots['body'], 'robots.txt exclut les espaces personnels (EN)');
 
-$rss = $request('GET', '/actualites/rss');
+$rss = $request('GET', '/fr/actualites/rss');
 T::contains('<rss', $rss['body'], 'le flux RSS est valide');
 
 // ------------------------------------------------------------ sécurité
 
 T::suite('Sécurité');
 
-$post = $request('POST', '/inscription', ['email' => 'sans.jeton@exemple.be']);
+$post = $request('POST', '/fr/inscription', ['email' => 'sans.jeton@exemple.be']);
 T::same(419, $post['status'], 'une soumission sans jeton CSRF est rejetée');
 
 $admin = $request('GET', '/admin');
@@ -225,7 +240,7 @@ T::same(200, $request('GET', '/cron/jetondetestcron')['status'], 'le cron accept
 // Un jeton d'inscription inexistant ne doit rien reveler.
 T::same(
     404,
-    $request('GET', '/mon-inscription/' . str_repeat('a', 64))['status'],
+    $request('GET', '/fr/mon-inscription/' . str_repeat('a', 64))['status'],
     'un jeton d\'inscription inconnu répond 404'
 );
 
@@ -233,11 +248,11 @@ T::same(
 
 T::suite('Parcours d\'inscription complet');
 
-$page = $request('GET', '/inscription');
+$page = $request('GET', '/fr/inscription');
 $token = $csrf($page['body']);
 T::assert($token !== '', 'le formulaire d\'inscription porte un jeton CSRF');
 
-$step1 = $request('POST', '/inscription', [
+$step1 = $request('POST', '/fr/inscription', [
     '_token' => $token,
     'civility' => 'Mme',
     'first_name' => 'Camille',
@@ -248,21 +263,21 @@ $step1 = $request('POST', '/inscription', [
 ]);
 
 T::same(302, $step1['status'], 'l\'étape 1 redirige vers l\'étape suivante');
-T::contains('/inscription/preferences/', $step1['location'], 'la redirection mène aux préférences');
+T::contains('/fr/inscription/preferences/', $step1['location'], 'la redirection mène aux préférences');
 
-preg_match('#/inscription/preferences/([a-f0-9]{64})#', $step1['location'], $matches);
+preg_match('#/fr/inscription/preferences/([a-f0-9]{64})#', $step1['location'], $matches);
 $registrationToken = $matches[1] ?? '';
 T::assert($registrationToken !== '', 'un jeton d\'inscription de 64 caractères est attribué');
 
 // Doublon : une deuxieme inscription avec la meme adresse doit etre refusee
 // une fois la premiere confirmee (testee plus bas).
 
-$step2Page = $request('GET', '/inscription/preferences/' . $registrationToken);
+$step2Page = $request('GET', '/fr/inscription/preferences/' . $registrationToken);
 T::same(200, $step2Page['status'], 'l\'étape 2 est accessible avec le jeton');
 T::contains('Halal', $step2Page['body'], 'les régimes alimentaires sont proposés');
 
 // Une allergie declaree sans consentement sante doit etre refusee.
-$refused = $request('POST', '/inscription/preferences/' . $registrationToken, [
+$refused = $request('POST', '/fr/inscription/preferences/' . $registrationToken, [
     '_token' => $csrf($step2Page['body']),
     'diet' => 'halal',
     'diet_comment' => 'Viande halal uniquement.',
@@ -270,13 +285,13 @@ $refused = $request('POST', '/inscription/preferences/' . $registrationToken, [
     'allergies_comment' => 'Allergie aux arachides.',
 ]);
 T::contains(
-    '/inscription/preferences/',
+    '/fr/inscription/preferences/',
     $refused['location'],
     'une allergie déclarée sans consentement santé renvoie au formulaire'
 );
 
-$step2Page = $request('GET', '/inscription/preferences/' . $registrationToken);
-$step2 = $request('POST', '/inscription/preferences/' . $registrationToken, [
+$step2Page = $request('GET', '/fr/inscription/preferences/' . $registrationToken);
+$step2 = $request('POST', '/fr/inscription/preferences/' . $registrationToken, [
     '_token' => $csrf($step2Page['body']),
     'diet' => 'halal',
     'diet_comment' => 'Viande halal uniquement.',
@@ -285,66 +300,66 @@ $step2 = $request('POST', '/inscription/preferences/' . $registrationToken, [
     'consent_health' => '1',
 ]);
 
-T::contains('/inscription/recapitulatif/', $step2['location'], 'l\'étape 2 mène au récapitulatif');
+T::contains('/fr/inscription/recapitulatif/', $step2['location'], 'l\'étape 2 mène au récapitulatif');
 
-$review = $request('GET', '/inscription/recapitulatif/' . $registrationToken);
+$review = $request('GET', '/fr/inscription/recapitulatif/' . $registrationToken);
 T::same(200, $review['status'], 'le récapitulatif est accessible');
 T::contains('Camille', $review['body'], 'le récapitulatif reprend le prénom saisi');
 T::contains('Halal', $review['body'], 'le récapitulatif reprend le régime choisi');
 T::contains('arachides', $review['body'], 'le récapitulatif reprend le détail des allergies');
 
 // Sans consentement RGPD, la confirmation doit echouer.
-$refusedConfirm = $request('POST', '/inscription/confirmer/' . $registrationToken, [
+$refusedConfirm = $request('POST', '/fr/inscription/confirmer/' . $registrationToken, [
     '_token' => $csrf($review['body']),
 ]);
 T::contains(
-    '/inscription/recapitulatif/',
+    '/fr/inscription/recapitulatif/',
     $refusedConfirm['location'],
     'la confirmation sans consentement RGPD est refusée'
 );
 
-$review = $request('GET', '/inscription/recapitulatif/' . $registrationToken);
-$confirm = $request('POST', '/inscription/confirmer/' . $registrationToken, [
+$review = $request('GET', '/fr/inscription/recapitulatif/' . $registrationToken);
+$confirm = $request('POST', '/fr/inscription/confirmer/' . $registrationToken, [
     '_token' => $csrf($review['body']),
     'consent_gdpr' => '1',
     'consent_terms' => '1',
 ]);
 
-T::contains('/inscription/paiement/', $confirm['location'], 'la confirmation mène à la page de paiement');
+T::contains('/fr/inscription/paiement/', $confirm['location'], 'la confirmation mène à la page de paiement');
 
 // ------------------------------------------------------------------ paiement
 
 T::suite('Paiement par virement');
 
-$payment = $request('GET', '/inscription/paiement/' . $registrationToken);
+$payment = $request('GET', '/fr/inscription/paiement/' . $registrationToken);
 T::same(200, $payment['status'], 'la page de paiement est accessible');
 T::contains('BE68', $payment['body'], 'l\'IBAN est affiché');
 T::contains('+++', $payment['body'], 'la communication structurée est affichée');
 T::contains('qr.png', $payment['body'], 'le QR code de virement est proposé');
 
-$qr = $request('GET', '/inscription/paiement/' . $registrationToken . '/qr.png');
+$qr = $request('GET', '/fr/inscription/paiement/' . $registrationToken . '/qr.png');
 T::same(200, $qr['status'], 'le QR code est servi');
 T::contains('image/png', $qr['type'], 'le QR code est une image PNG');
 T::same("\x89PNG", substr($qr['body'], 0, 4), 'le fichier est un PNG valide');
 
-$instructions = $request('GET', '/inscription/paiement/' . $registrationToken . '/instructions.pdf');
+$instructions = $request('GET', '/fr/inscription/paiement/' . $registrationToken . '/instructions.pdf');
 T::same(200, $instructions['status'], 'les instructions PDF sont servies');
 T::same('%PDF', substr($instructions['body'], 0, 4), 'le fichier est un PDF valide');
 
-$space = $request('GET', '/mon-inscription/' . $registrationToken);
+$space = $request('GET', '/fr/mon-inscription/' . $registrationToken);
 T::same(200, $space['status'], 'l\'espace participant est accessible');
 T::contains('Camille', $space['body'], 'l\'espace participant affiche le prénom');
 
 // RG-01 : doublon refuse.
-$page = $request('GET', '/inscription');
-$duplicate = $request('POST', '/inscription', [
+$page = $request('GET', '/fr/inscription');
+$duplicate = $request('POST', '/fr/inscription', [
     '_token' => $csrf($page['body']),
     'first_name' => 'Camille',
     'last_name' => 'Testeuse',
     'email' => 'camille.testeuse@exemple.be',
     'phone' => '+32 81 12 34 56',
 ]);
-T::contains('/inscription', $duplicate['location'], 'une deuxième inscription avec la même adresse est refusée');
+T::contains('/fr/inscription', $duplicate['location'], 'une deuxième inscription avec la même adresse est refusée');
 
 // -------------------------------------------------------------- back-office
 
@@ -468,7 +483,7 @@ T::assert(
     'la fiche d\'inscription expose le code de vérification du diplôme'
 );
 
-$verify = $request('GET', '/diplome/verification/' . ($codeMatch[1] ?? 'INTROUVABLE'));
+$verify = $request('GET', '/fr/diplome/verification/' . ($codeMatch[1] ?? 'INTROUVABLE'));
 T::same(200, $verify['status'], 'la page de vérification du diplôme répond 200');
 T::contains('authentique', $verify['body'], 'le diplôme est reconnu comme authentique');
 T::contains('Testeuse', $verify['body'], 'la page de vérification nomme le titulaire');
@@ -479,15 +494,15 @@ T::notContains(
 );
 
 // Le participant retrouve son diplôme depuis son espace personnel.
-$spaceWithDiploma = $request('GET', '/mon-inscription/' . $registrationToken);
+$spaceWithDiploma = $request('GET', '/fr/mon-inscription/' . $registrationToken);
 T::contains('diplôme', $spaceWithDiploma['body'], 'l\'espace participant annonce le diplôme');
 
-$participantPdf = $request('GET', '/mon-inscription/' . $registrationToken . '/diplome');
+$participantPdf = $request('GET', '/fr/mon-inscription/' . $registrationToken . '/diplome');
 T::same('%PDF', substr($participantPdf['body'], 0, 4), 'le participant peut télécharger son diplôme');
 
 T::same(
     404,
-    $request('GET', '/diplome/verification/CODEBIDON1234')['status'],
+    $request('GET', '/fr/diplome/verification/CODEBIDON1234')['status'],
     'un code de vérification inconnu répond 404'
 );
 
@@ -505,10 +520,10 @@ $created = $request('POST', '/admin/actualites', [
 
 T::same(302, $created['status'], 'la création d\'une actualité aboutit');
 
-$publicNews = $request('GET', '/actualites');
+$publicNews = $request('GET', '/fr/actualites');
 T::contains('Une actualité de test', $publicNews['body'], 'l\'actualité apparaît sur le site public');
 
-$article = $request('GET', '/actualites/une-actualite-de-test');
+$article = $request('GET', '/fr/actualites/une-actualite-de-test');
 T::same(200, $article['status'], 'l\'article est accessible par son slug');
 T::contains('<h2>Sous-titre</h2>', $article['body'], 'le Markdown est rendu en HTML');
 T::contains('NewsArticle', $article['body'], 'l\'article expose un JSON-LD NewsArticle');

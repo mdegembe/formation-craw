@@ -26,47 +26,58 @@ use Craw\Core\Router;
 
 $router = new Router();
 
+/*
+ * Site bilingue (FR/EN) : chaque route publique est prefixee par la langue
+ * (/fr/..., /en/...), ce qui la rend indexable separement et compatible avec
+ * les balises hreflang. Le back-office et les routes techniques (cron,
+ * medias, sitemap) restent non prefixes — voir Locale::requiresPrefix().
+ */
+$pub = static fn (string $pattern): string => '/{locale:fr|en}' . $pattern;
+
+/* Un visiteur arrivant sans prefixe est redirige vers sa langue (Accept-Language). */
+$router->get('/', [HomeController::class, 'redirectToLocale']);
+
 /* ------------------------------------------------------------ Site public */
 
-$router->get('/', [HomeController::class, 'index']);
-$router->get('/programme', [PageController::class, 'programme']);
-$router->get('/infos-pratiques', [PageController::class, 'practical']);
-$router->get('/mentions-legales', [PageController::class, 'legal']);
-$router->get('/confidentialite', [PageController::class, 'privacy']);
-$router->get('/accessibilite', [PageController::class, 'accessibility']);
+$router->get($pub(''), [HomeController::class, 'index']);
+$router->get($pub('/programme'), [PageController::class, 'programme']);
+$router->get($pub('/infos-pratiques'), [PageController::class, 'practical']);
+$router->get($pub('/mentions-legales'), [PageController::class, 'legal']);
+$router->get($pub('/confidentialite'), [PageController::class, 'privacy']);
+$router->get($pub('/accessibilite'), [PageController::class, 'accessibility']);
 
-$router->get('/actualites', [NewsController::class, 'index']);
-$router->get('/actualites/rss', [NewsController::class, 'rss']);
-$router->get('/actualites/{slug:[a-z0-9-]+}', [NewsController::class, 'show']);
+$router->get($pub('/actualites'), [NewsController::class, 'index']);
+$router->get($pub('/actualites/rss'), [NewsController::class, 'rss']);
+$router->get($pub('/actualites/{slug:[a-z0-9-]+}'), [NewsController::class, 'show']);
 
 /* ------------------------------------------------------------ Inscription */
 
 $token = '{token:[a-f0-9]{64}}';
 
-$router->get('/inscription', [RegistrationController::class, 'start']);
-$router->post('/inscription', [RegistrationController::class, 'storeIdentity'], ['throttle']);
-$router->get('/inscription/preferences/' . $token, [RegistrationController::class, 'preferences']);
-$router->post('/inscription/preferences/' . $token, [RegistrationController::class, 'storePreferences']);
-$router->get('/inscription/recapitulatif/' . $token, [RegistrationController::class, 'review']);
-$router->post('/inscription/confirmer/' . $token, [RegistrationController::class, 'confirm']);
+$router->get($pub('/inscription'), [RegistrationController::class, 'start']);
+$router->post($pub('/inscription'), [RegistrationController::class, 'storeIdentity'], ['throttle']);
+$router->get($pub('/inscription/preferences/' . $token), [RegistrationController::class, 'preferences']);
+$router->post($pub('/inscription/preferences/' . $token), [RegistrationController::class, 'storePreferences']);
+$router->get($pub('/inscription/recapitulatif/' . $token), [RegistrationController::class, 'review']);
+$router->post($pub('/inscription/confirmer/' . $token), [RegistrationController::class, 'confirm']);
 
-$router->get('/mon-inscription/' . $token, [RegistrationController::class, 'space']);
-$router->get('/mon-inscription/' . $token . '/diplome', [RegistrationController::class, 'downloadDiploma']);
+$router->get($pub('/mon-inscription/' . $token), [RegistrationController::class, 'space']);
+$router->get($pub('/mon-inscription/' . $token . '/diplome'), [RegistrationController::class, 'downloadDiploma']);
 
 /* --------------------------------------------------------------- Paiement */
 
-$router->get('/inscription/paiement/' . $token, [PaymentController::class, 'show']);
-$router->get('/inscription/paiement/' . $token . '/qr.png', [PaymentController::class, 'qrCode']);
-$router->get('/inscription/paiement/' . $token . '/instructions.pdf', [PaymentController::class, 'instructions']);
+$router->get($pub('/inscription/paiement/' . $token), [PaymentController::class, 'show']);
+$router->get($pub('/inscription/paiement/' . $token . '/qr.png'), [PaymentController::class, 'qrCode']);
+$router->get($pub('/inscription/paiement/' . $token . '/instructions.pdf'), [PaymentController::class, 'instructions']);
 
 /* ----------------------------------------------------- Verification diplome */
 
-$router->get('/diplome/verification/{code:[A-Za-z0-9]{8,40}}', [DiplomaPublicController::class, 'verify']);
+$router->get($pub('/diplome/verification/{code:[A-Za-z0-9]{8,40}}'), [DiplomaPublicController::class, 'verify']);
 
 /* ---------------------------------------------------------------- Contact */
 
-$router->get('/contact', [ContactController::class, 'show']);
-$router->post('/contact', [ContactController::class, 'submit'], ['throttle']);
+$router->get($pub('/contact'), [ContactController::class, 'show']);
+$router->post($pub('/contact'), [ContactController::class, 'submit'], ['throttle']);
 
 /* ------------------------------------------------------------ SEO / medias */
 

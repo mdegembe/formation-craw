@@ -22,8 +22,8 @@ final class DiplomaPublicController extends BaseController
         $diploma = (new DiplomaRepository())->findByVerificationCode((string) $params['code']);
 
         return $this->view('public/diploma_verify', [
-            'title' => $diploma === null ? 'Diplôme non reconnu' : 'Vérification d\'un diplôme',
-            'description' => 'Vérification de l\'authenticité d\'un diplôme délivré par le CRA-W.',
+            'title' => $diploma === null ? t('meta.diploma_not_found_title') : t('meta.diploma_verify_title'),
+            'description' => t('meta.diploma_verify_description'),
             'canonical' => url('/'),
             'noindex' => true,
             'diploma' => $diploma,

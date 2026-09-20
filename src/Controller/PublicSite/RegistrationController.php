@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Craw\Controller\PublicSite;
 
 use Craw\Controller\BaseController;
+use Craw\Core\Locale;
 use Craw\Core\Logger;
 use Craw\Core\Request;
 use Craw\Core\Response;
@@ -41,9 +42,8 @@ final class RegistrationController extends BaseController
         $trainingId = (int) $training['id'];
 
         return $this->view('public/registration_identity', [
-            'title' => 'Inscription à la formation',
-            'description' => 'Formulaire d\'inscription à la formation organisée par le CRA-W '
-                . 'du 15 au 19 mars 2027 à Gembloux. Sans création de compte.',
+            'title' => t('meta.registration_title'),
+            'description' => t('meta.registration_description'),
             'canonical' => url('/inscription'),
             'activeNav' => 'inscription',
             'training' => $training,
@@ -66,7 +66,7 @@ final class RegistrationController extends BaseController
         $trainingId = (int) $training['id'];
 
         if (!$trainings->isOpen($trainingId)) {
-            Session::flash('error', 'Les inscriptions à cette formation sont closes.');
+            Session::flash('error', t('flash.registration_closed'));
 
             return $this->redirect('/inscription');
         }
@@ -84,27 +84,26 @@ final class RegistrationController extends BaseController
         $needsInvoice = $request->boolean('needs_invoice');
 
         $validator = Validator::make($input)
-            ->required('last_name', 'Nom')->maxLength('last_name', 'Nom', 100)
-            ->required('first_name', 'Prénom')->maxLength('first_name', 'Prénom', 100)
-            ->required('email', 'Adresse e-mail')->email('email', 'Adresse e-mail')
-            ->required('phone', 'Téléphone')->phone('phone', 'Téléphone')
-            ->in('civility', 'Civilité', self::CIVILITIES)
-            ->date('birth_date', 'Date de naissance')
-            ->maxLength('organisation', 'Organisation', 150)
-            ->maxLength('job_title', 'Fonction', 150)
-            ->requiredIf('street', 'Rue et numéro', $needsInvoice)
-            ->requiredIf('postal_code', 'Code postal', $needsInvoice)
-            ->requiredIf('city', 'Localité', $needsInvoice)
-            ->maxLength('street', 'Rue et numéro', 190)
-            ->maxLength('city', 'Localité', 120);
+            ->required('last_name', t('field.last_name'))->maxLength('last_name', t('field.last_name'), 100)
+            ->required('first_name', t('field.first_name'))->maxLength('first_name', t('field.first_name'), 100)
+            ->required('email', t('field.email'))->email('email', t('field.email'))
+            ->required('phone', t('field.phone'))->phone('phone', t('field.phone'))
+            ->in('civility', t('field.civility'), self::CIVILITIES)
+            ->date('birth_date', t('field.birth_date'))
+            ->maxLength('organisation', t('field.organisation'), 150)
+            ->maxLength('job_title', t('field.job_title'), 150)
+            ->requiredIf('street', t('field.street'), $needsInvoice)
+            ->requiredIf('postal_code', t('field.postal_code'), $needsInvoice)
+            ->requiredIf('city', t('field.city'), $needsInvoice)
+            ->maxLength('street', t('field.street'), 190)
+            ->maxLength('city', t('field.city'), 120);
 
         if (($input['vat_number'] ?? '') !== '') {
-            $validator->vatNumber('vat_number', 'Numéro de TVA');
+            $validator->vatNumber('vat_number', t('field.vat_number'));
         }
 
         if ($validator->fails()) {
-            return $this->back('/inscription', $validator->errors(), $input,
-                'Le formulaire comporte des erreurs. Merci de les corriger.');
+            return $this->back('/inscription', $validator->errors(), $input, t('validation.form_errors'));
         }
 
         $email = mb_strtolower((string) $request->input('email'));
@@ -114,9 +113,9 @@ final class RegistrationController extends BaseController
         $existing = $registrations->findActiveByEmail($trainingId, $email);
 
         if ($existing !== null) {
-            return $this->back('/inscription', ['email' => 'Une inscription existe déjà pour cette adresse e-mail.'],
+            return $this->back('/inscription', ['email' => t('flash.registration_exists')],
                 $input,
-                'Une inscription est déjà enregistrée avec cette adresse. Consultez le courriel de confirmation reçu.');
+                t('flash.registration_exists_full'));
         }
 
         $service = new RegistrationService();
@@ -136,6 +135,7 @@ final class RegistrationController extends BaseController
             'country' => $request->input('country') ?? 'Belgique',
             'vat_number' => $request->input('vat_number'),
             'needs_invoice' => $needsInvoice ? 1 : 0,
+            'locale' => Locale::current(),
             'ip_hash' => $request->ipHash(),
             'user_agent' => $request->userAgent(),
         ]);
@@ -150,8 +150,8 @@ final class RegistrationController extends BaseController
         [$registration, $training] = $this->draft((string) $params['token']);
 
         return $this->view('public/registration_preferences', [
-            'title' => 'Préférences alimentaires',
-            'description' => 'Indiquez votre régime alimentaire et vos éventuelles allergies.',
+            'title' => t('meta.preferences_title'),
+            'description' => t('meta.preferences_description'),
             'canonical' => url('/inscription'),
             'noindex' => true,
             'training' => $training,
@@ -173,21 +173,18 @@ final class RegistrationController extends BaseController
         $dietCase = DietPreference::tryFrom($diet);
 
         $validator = Validator::make($input)
-            ->required('diet', 'Régime alimentaire')
-            ->in('diet', 'Régime alimentaire', DietPreference::values())
-            ->maxLength('diet_comment', 'Précision sur le régime', 500)
-            ->maxLength('allergies_comment', 'Détail des allergies', 500)
-            ->maxLength('logistics_comment', 'Remarques', 500)
+            ->required('diet', t('field.diet'))
+            ->in('diet', t('field.diet'), DietPreference::values())
+            ->maxLength('diet_comment', t('field.diet_comment'), 500)
+            ->maxLength('allergies_comment', t('field.allergies_comment'), 500)
+            ->maxLength('logistics_comment', t('field.logistics_comment'), 500)
             // Un commentaire est exige quand le choix ne se suffit pas a lui-meme.
-            ->requiredIf('diet_comment', 'Précision sur le régime', $dietCase?->requiresComment() ?? false)
-            ->requiredIf('allergies_comment', 'Détail des allergies', $hasAllergies);
+            ->requiredIf('diet_comment', t('field.diet_comment'), $dietCase?->requiresComment() ?? false)
+            ->requiredIf('allergies_comment', t('field.allergies_comment'), $hasAllergies);
 
         if ($hasAllergies) {
             // Donnee de sante : consentement explicite et distinct (RGPD art. 9).
-            $validator->accepted(
-                'consent_health',
-                'Merci de confirmer votre accord pour la transmission de vos allergies au traiteur.'
-            );
+            $validator->accepted('consent_health', t('validation.consent_health'));
         }
 
         if ($validator->fails()) {
@@ -195,7 +192,7 @@ final class RegistrationController extends BaseController
                 '/inscription/preferences/' . (string) $registration['token'],
                 $validator->errors(),
                 $input,
-                'Merci de compléter les informations manquantes.'
+                t('validation.missing_fields')
             );
         }
 
@@ -218,8 +215,8 @@ final class RegistrationController extends BaseController
         [$registration, $training] = $this->draft((string) $params['token']);
 
         return $this->view('public/registration_review', [
-            'title' => 'Récapitulatif de votre inscription',
-            'description' => 'Vérifiez vos informations avant de valider votre inscription.',
+            'title' => t('meta.review_title'),
+            'description' => t('meta.review_description'),
             'canonical' => url('/inscription'),
             'noindex' => true,
             'training' => $training,
@@ -234,15 +231,15 @@ final class RegistrationController extends BaseController
         [$registration, $training] = $this->draft((string) $params['token']);
 
         $validator = Validator::make($request->all())
-            ->accepted('consent_gdpr', 'Vous devez accepter le traitement de vos données pour vous inscrire.')
-            ->accepted('consent_terms', 'Vous devez accepter les conditions de participation et d\'annulation.');
+            ->accepted('consent_gdpr', t('validation.consent_gdpr'))
+            ->accepted('consent_terms', t('validation.consent_terms'));
 
         if ($validator->fails()) {
             return $this->back(
                 '/inscription/recapitulatif/' . (string) $registration['token'],
                 $validator->errors(),
                 [],
-                'Merci de cocher les cases requises pour finaliser votre inscription.'
+                t('validation.confirm_missing')
             );
         }
 
@@ -259,16 +256,12 @@ final class RegistrationController extends BaseController
         Notifier::registrationConfirmed($confirmed, $training);
 
         if ((string) $confirmed['status'] === 'waitlist') {
-            Session::flash(
-                'warning',
-                'La formation est complète : votre demande est enregistrée en liste d\'attente. '
-                . 'Nous vous préviendrons dès qu\'une place se libère.'
-            );
+            Session::flash('warning', t('flash.registration_waitlist'));
 
             return $this->redirect('/mon-inscription/' . (string) $confirmed['token']);
         }
 
-        Session::flash('success', 'Votre inscription est enregistrée. Un courriel de confirmation vous a été envoyé.');
+        Session::flash('success', t('flash.registration_success'));
 
         if ((int) $confirmed['amount_due_cents'] <= 0) {
             return $this->redirect('/mon-inscription/' . (string) $confirmed['token']);
@@ -284,7 +277,7 @@ final class RegistrationController extends BaseController
         $registration = $registrations->findByToken((string) $params['token']);
 
         if ($registration === null || (string) $registration['status'] === 'draft') {
-            $this->notFound('Ce lien d\'inscription n\'est plus valide.');
+            $this->notFound(t('notfound.registration_link'));
         }
 
         $training = (new TrainingRepository())->find((int) $registration['training_id']);
@@ -294,7 +287,7 @@ final class RegistrationController extends BaseController
         }
 
         return $this->view('public/registration_space', [
-            'title' => 'Mon inscription',
+            'title' => t('meta.space_title'),
             'noindex' => true,
             'canonical' => url('/'),
             'registration' => $registration,
@@ -316,13 +309,13 @@ final class RegistrationController extends BaseController
         $diploma = (new DiplomaRepository())->latestForRegistration((int) $registration['id']);
 
         if ($diploma === null) {
-            $this->notFound('Aucun diplôme n\'est disponible pour cette inscription.');
+            $this->notFound(t('notfound.diploma_unavailable'));
         }
 
         $path = storage_path((string) $diploma['file_path']);
 
         if (!is_file($path)) {
-            $this->notFound('Le fichier du diplôme est introuvable.');
+            $this->notFound(t('notfound.diploma_file'));
         }
 
         return Response::inline(
@@ -342,13 +335,13 @@ final class RegistrationController extends BaseController
         $registration = (new RegistrationRepository())->findByToken($token);
 
         if ($registration === null) {
-            $this->notFound('Ce lien d\'inscription n\'est plus valide.');
+            $this->notFound(t('notfound.registration_link'));
         }
 
         // Une inscription deja confirmee ne repasse pas par le formulaire :
         // on renvoie la personne vers son espace plutot que d'afficher une erreur.
         if ((string) $registration['status'] !== 'draft') {
-            Session::flash('info', 'Cette inscription est déjà enregistrée.');
+            Session::flash('info', t('flash.registration_already'));
 
             $this->redirectAway('/mon-inscription/' . $token);
         }

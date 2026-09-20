@@ -17,6 +17,8 @@ final class Config
 
     private static bool $loaded = false;
 
+    private static ?string $requestBaseUrl = null;
+
     public static function load(string $rootPath): void
     {
         if (self::$loaded) {
@@ -118,6 +120,23 @@ final class Config
 
     public static function appUrl(): string
     {
-        return rtrim(self::get('APP_URL', 'http://localhost:8080') ?? '', '/');
+        return self::$requestBaseUrl ?? rtrim(self::get('APP_URL', 'http://localhost:8080') ?? '', '/');
+    }
+
+    /**
+     * Permet aux liens generes pendant une requete de suivre l'hote reellement
+     * utilise par le navigateur (utile en local avec plusieurs alias sur le
+     * meme projet). Jamais active en production : on ne veut pas qu'un en-tete
+     * Host falsifie puisse influencer les URLs generees (mails, canonical...).
+     */
+    public static function setRequestBaseUrl(?string $url): void
+    {
+        if ($url === null || $url === '' || self::isProduction()) {
+            self::$requestBaseUrl = null;
+
+            return;
+        }
+
+        self::$requestBaseUrl = rtrim($url, '/');
     }
 }

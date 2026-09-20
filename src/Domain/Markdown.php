@@ -158,6 +158,12 @@ final class Markdown
                     return $matches[1];
                 }
 
+                // Un lien relatif au site (ex. /confidentialite) doit porter le
+                // prefixe de langue de la page courante, comme tout autre lien.
+                if (preg_match('#^https?://|^mailto:#i', $url) !== 1) {
+                    $url = url($url);
+                }
+
                 $safeUrl = htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
                 $external = preg_match('#^https?://#i', $url) === 1;
 

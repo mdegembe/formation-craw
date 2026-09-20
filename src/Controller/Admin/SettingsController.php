@@ -58,6 +58,10 @@ final class SettingsController extends AdminController
             'summary' => $request->input('summary'),
             'description' => $request->input('description'),
             'practical_info' => $request->input('practical_info'),
+            'subject_en' => $request->input('subject_en') ?: null,
+            'summary_en' => $request->input('summary_en'),
+            'description_en' => $request->input('description_en'),
+            'practical_info_en' => $request->input('practical_info_en'),
             'starts_on' => $startsOn,
             'ends_on' => $endsOn,
             'location_name' => mb_substr((string) ($request->input('location_name') ?? ''), 0, 190),
@@ -70,6 +74,8 @@ final class SettingsController extends AdminController
                 : (string) $training['status'],
             'meta_title' => $request->input('meta_title'),
             'meta_description' => $request->input('meta_description'),
+            'meta_title_en' => $request->input('meta_title_en'),
+            'meta_description_en' => $request->input('meta_description_en'),
         ]);
 
         // ------------------------------------------------------- parametres
@@ -127,12 +133,14 @@ final class SettingsController extends AdminController
             $id = (int) $day['id'];
 
             $topic = $request->input('topic_' . $id);
+            $topicEn = $request->input('topic_en_' . $id);
             $speaker = $request->input('speaker_' . $id);
             $startsAt = $request->input('starts_at_' . $id);
             $endsAt = $request->input('ends_at_' . $id);
 
             $this->trainings->updateDay($id, [
                 'topic' => $topic === null || $topic === '' ? null : mb_substr($topic, 0, 190),
+                'topic_en' => $topicEn === null || $topicEn === '' ? null : mb_substr($topicEn, 0, 190),
                 'speaker' => $speaker === null || $speaker === '' ? null : mb_substr($speaker, 0, 190),
                 'starts_at' => preg_match('/^\d{2}:\d{2}$/', (string) $startsAt) === 1 ? $startsAt : $day['starts_at'],
                 'ends_at' => preg_match('/^\d{2}:\d{2}$/', (string) $endsAt) === 1 ? $endsAt : $day['ends_at'],

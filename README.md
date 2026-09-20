@@ -38,6 +38,14 @@ une mention « en cours de définition » et tout le contenu est éditable depui
 
 ## Prérequis
 
+Deux façons de lancer le projet : avec Docker (rien d'autre à installer), ou directement avec PHP.
+
+**Avec Docker**
+
+- [Docker](https://docs.docker.com/get-docker/) et Docker Compose (inclus dans Docker Desktop)
+
+**Sans Docker**
+
 - PHP **8.2 ou supérieur** (développé et testé sur 8.4)
 - Extensions : `pdo`, `pdo_sqlite` ou `pdo_mysql`, `mbstring`, `gd`, `json`, `dom`
 - [Composer](https://getcomposer.org/)
@@ -46,6 +54,47 @@ une mention « en cours de définition » et tout le contenu est éditable depui
 ---
 
 ## Installation
+
+### Avec Docker
+
+```bash
+git clone <dépôt> formation-craw
+cd formation-craw
+
+cp .env.example .env
+# Renseigner APP_KEY et CRON_TOKEN dans .env, par exemple :
+sed -i "s/^APP_KEY=$/APP_KEY=$(openssl rand -hex 32)/" .env
+sed -i "s/^CRON_TOKEN=$/CRON_TOKEN=$(openssl rand -hex 16)/" .env
+
+docker compose up -d --build
+```
+
+Le site est alors disponible sur **<http://localhost:8080>**. Au premier démarrage, le
+conteneur applique les migrations et charge automatiquement un jeu de données de
+démonstration (24 inscriptions, paiements variés, absences, statistiques).
+
+Créer ensuite un compte administrateur :
+
+```bash
+docker compose exec app php bin/console.php create-admin
+```
+
+(l'e-mail, le nom et le mot de passe sont demandés interactivement, ou passés directement en
+arguments : `create-admin <email> <nom> <mot-de-passe>`).
+
+Le fichier `.env` et le dossier `storage/` sont montés depuis l'hôte : la base SQLite, les
+journaux, les téléversements et les diplômes générés survivent à `docker compose down` puis
+`up`. Pour repartir de zéro, supprimer `storage/database.sqlite` avant de relancer.
+
+| Commande | Effet |
+|---|---|
+| `docker compose up -d --build` | Démarre (ou reconstruit) le conteneur |
+| `docker compose logs -f app` | Suit les journaux du serveur |
+| `docker compose exec app php bin/console.php <commande>` | Exécute une commande d'administration (voir [tableau ci-dessous](#commandes-disponibles)) |
+| `docker compose exec app php tests/run.php --http` | Lance les tests dans le conteneur |
+| `docker compose down` | Arrête le conteneur (les données sont conservées) |
+
+### Sans Docker
 
 ```bash
 git clone <dépôt> formation-craw
@@ -105,20 +154,29 @@ l'aide du jeton défini dans `.env` :
 https://formation.cra.wallonie.be/cron/<CRON_TOKEN>
 ```
 
+Avec Docker, la crontab de l'hôte appelle simplement la commande dans le conteneur :
+
+```cron
+*/10 * * * * cd /chemin/vers/formation-craw && docker compose exec -T app php bin/console.php cron >> storage/logs/cron.log 2>&1
+```
+
 ---
 
 ## Commandes disponibles
 
+Toutes ces commandes s'exécutent avec `php bin/console.php <commande>` (ou, avec Docker,
+`docker compose exec app php bin/console.php <commande>`).
+
 | Commande | Effet |
 |---|---|
-| `php bin/console.php migrate` | Applique les migrations en attente |
-| `php bin/console.php migrate:fresh --force` | Recrée la base — **destructif** |
-| `php bin/console.php seed [--demo]` | Charge les données initiales |
-| `php bin/console.php create-admin` | Crée ou réinitialise un compte administrateur |
-| `php bin/console.php cron` | Relances, envois de courriels, purges |
-| `php bin/console.php mail:flush` | Vide la file d'attente des courriels |
-| `php bin/console.php routes` | Liste les routes déclarées |
-| `php bin/console.php settings` | Affiche les paramètres métier |
+| `migrate` | Applique les migrations en attente |
+| `migrate:fresh --force` | Recrée la base — **destructif** |
+| `seed [--demo]` | Charge les données initiales |
+| `create-admin` | Crée ou réinitialise un compte administrateur |
+| `cron` | Relances, envois de courriels, purges |
+| `mail:flush` | Vide la file d'attente des courriels |
+| `routes` | Liste les routes déclarées |
+| `settings` | Affiche les paramètres métier |
 
 ---
 
@@ -190,6 +248,8 @@ storage/         hors web : base SQLite, journaux, téléversements, diplômes g
 bin/console.php  commandes d'administration
 tests/           tests des règles métier et tests fonctionnels HTTP
 docs/ANALYSE.md  analyse fonctionnelle et technique
+Dockerfile, docker-compose.yml, docker-entrypoint.sh
+                 image et orchestration pour un lancement en conteneur (voir Installation)
 ```
 
 ---

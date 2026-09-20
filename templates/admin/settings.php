@@ -139,6 +139,42 @@ View::extend('layouts/admin');
     </div>
 
     <div class="panel mb-3">
+        <h2 style="font-size: 1.125rem;">La formation (anglais)</h2>
+        <p class="text-muted small">
+            Facultatif. Laissé vide, le contenu français ci-dessus reste affiché sur la version
+            anglaise du site.
+        </p>
+
+        <div class="form-grid form-grid--2 mt-3">
+            <div class="form-field form-field--full">
+                <label class="form-label" for="subject_en">Subject</label>
+                <input class="form-control" type="text" id="subject_en" name="subject_en" maxlength="190"
+                       value="<?= e((string) ($training['subject_en'] ?? '')) ?>">
+            </div>
+
+            <div class="form-field form-field--full">
+                <label class="form-label" for="summary_en">Summary (homepage strapline)</label>
+                <textarea class="form-control" id="summary_en" name="summary_en" rows="2"
+                ><?= e((string) ($training['summary_en'] ?? '')) ?></textarea>
+            </div>
+
+            <div class="form-field form-field--full">
+                <label class="form-label" for="description_en">Detailed description</label>
+                <textarea class="form-control" id="description_en" name="description_en" rows="10"
+                          style="font-family: var(--craw-font-mono); font-size: 0.9375rem;"
+                ><?= e((string) ($training['description_en'] ?? '')) ?></textarea>
+            </div>
+
+            <div class="form-field form-field--full">
+                <label class="form-label" for="practical_info_en">Practical information</label>
+                <textarea class="form-control" id="practical_info_en" name="practical_info_en" rows="10"
+                          style="font-family: var(--craw-font-mono); font-size: 0.9375rem;"
+                ><?= e((string) ($training['practical_info_en'] ?? '')) ?></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel mb-3">
         <h2 style="font-size: 1.125rem;">Diplômes et présences</h2>
         <p class="text-muted small">
             La présence est binaire : un participant est présent ou absent, sans motif ni
@@ -256,6 +292,18 @@ View::extend('layouts/admin');
                 <textarea class="form-control" id="meta_description" name="meta_description" rows="2" maxlength="255"
                 ><?= e((string) ($training['meta_description'] ?? '')) ?></textarea>
             </div>
+
+            <div class="form-field form-field--full">
+                <label class="form-label" for="meta_title_en">Titre SEO (anglais)</label>
+                <input class="form-control" type="text" id="meta_title_en" name="meta_title_en" maxlength="190"
+                       value="<?= e((string) ($training['meta_title_en'] ?? '')) ?>">
+            </div>
+
+            <div class="form-field form-field--full">
+                <label class="form-label" for="meta_description_en">Description SEO (anglais)</label>
+                <textarea class="form-control" id="meta_description_en" name="meta_description_en" rows="2" maxlength="255"
+                ><?= e((string) ($training['meta_description_en'] ?? '')) ?></textarea>
+            </div>
         </div>
     </div>
 
@@ -283,6 +331,7 @@ View::extend('layouts/admin');
                         <th scope="col">Début</th>
                         <th scope="col">Fin</th>
                         <th scope="col">Intitulé</th>
+                        <th scope="col">Title (EN)</th>
                         <th scope="col">Intervenant</th>
                         <th scope="col">Présence</th>
                     </tr>
@@ -311,6 +360,12 @@ View::extend('layouts/admin');
                                 <input class="form-control" type="text" maxlength="190"
                                        id="topic_<?= e((string) $id) ?>" name="topic_<?= e((string) $id) ?>"
                                        value="<?= e((string) ($day['topic'] ?? '')) ?>">
+                            </td>
+                            <td>
+                                <label class="visually-hidden" for="topic_en_<?= e((string) $id) ?>">Session title (English)</label>
+                                <input class="form-control" type="text" maxlength="190"
+                                       id="topic_en_<?= e((string) $id) ?>" name="topic_en_<?= e((string) $id) ?>"
+                                       value="<?= e((string) ($day['topic_en'] ?? '')) ?>">
                             </td>
                             <td>
                                 <label class="visually-hidden" for="speaker_<?= e((string) $id) ?>">Intervenant</label>

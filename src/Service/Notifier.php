@@ -107,7 +107,10 @@ final class Notifier
             'Votre diplôme de participation',
             self::payload($registration, $training) + [
                 'diploma' => $diploma,
-                'verificationUrl' => url('/diplome/verification/' . (string) $diploma['verification_code']),
+                'verificationUrl' => url(
+                    '/diplome/verification/' . (string) $diploma['verification_code'],
+                    (string) ($registration['locale'] ?? 'fr')
+                ),
             ],
             [[
                 'path' => $pdfPath,
@@ -133,8 +136,13 @@ final class Notifier
         $iban = (string) Settings::get('payment.iban', '');
         $amountCents = (int) $registration['amount_due_cents'];
         $communication = (string) ($registration['structured_communication'] ?? '');
+        // La langue est figee au moment de l'envoi : le gabarit choisi (a la
+        // livraison, potentiellement bien plus tard via le cron) doit
+        // correspondre aux liens deja composes ci-dessous.
+        $locale = (string) ($registration['locale'] ?? 'fr');
 
         return [
+            'locale' => $locale,
             'registration' => [
                 'id' => (int) $registration['id'],
                 'reference' => (string) $registration['reference'],
@@ -163,10 +171,10 @@ final class Notifier
                 'communication' => $communication,
             ],
             'links' => [
-                'space' => url('/mon-inscription/' . (string) $registration['token']),
-                'payment' => url('/inscription/paiement/' . (string) $registration['token']),
-                'site' => url('/'),
-                'contact' => url('/contact'),
+                'space' => url('/mon-inscription/' . (string) $registration['token'], $locale),
+                'payment' => url('/inscription/paiement/' . (string) $registration['token'], $locale),
+                'site' => url('/', $locale),
+                'contact' => url('/contact', $locale),
             ],
             'contact' => [
                 'email' => (string) Settings::get('contact.email', ''),

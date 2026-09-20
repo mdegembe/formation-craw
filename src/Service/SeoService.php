@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Craw\Service;
 
+use Craw\Core\Locale;
 use Craw\Core\Settings;
 use Craw\Domain\Markdown;
 
@@ -29,21 +30,21 @@ final class SeoService
 
         $name = $subjectPending || ($training['subject'] ?? '') === ''
             ? (string) $training['title']
-            : (string) $training['subject'];
+            : (string) localized_field($training, 'subject');
 
         $data = [
             '@context' => 'https://schema.org',
             '@type' => 'EducationEvent',
             'name' => $name,
             'description' => str_excerpt(
-                Markdown::toText((string) ($training['summary'] ?? $training['description'] ?? '')),
+                Markdown::toText((string) (localized_field($training, 'summary') ?? localized_field($training, 'description') ?? '')),
                 300
             ),
             'startDate' => (string) $training['starts_on'] . 'T09:00:00+01:00',
             'endDate' => (string) $training['ends_on'] . 'T17:00:00+01:00',
             'eventStatus' => 'https://schema.org/EventScheduled',
             'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
-            'inLanguage' => 'fr-BE',
+            'inLanguage' => Locale::current() === 'en' ? 'en-US' : 'fr-BE',
             'url' => url('/'),
             'location' => [
                 '@type' => 'Place',
@@ -116,11 +117,11 @@ final class SeoService
         $data = [
             '@context' => 'https://schema.org',
             '@type' => 'NewsArticle',
-            'headline' => str_excerpt((string) $article['title'], 110),
-            'description' => (string) ($article['excerpt'] ?? ''),
+            'headline' => str_excerpt((string) localized_field($article, 'title'), 110),
+            'description' => (string) (localized_field($article, 'excerpt') ?? ''),
             'datePublished' => date('c', strtotime((string) $article['published_at'])),
             'dateModified' => date('c', strtotime((string) ($article['updated_at'] ?? $article['published_at']))),
-            'inLanguage' => 'fr-BE',
+            'inLanguage' => Locale::current() === 'en' ? 'en-US' : 'fr-BE',
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
                 '@id' => url('/actualites/' . (string) $article['slug']),

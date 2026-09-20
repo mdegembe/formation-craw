@@ -178,6 +178,9 @@ final class NewsAdminController extends AdminController
             ->required('body', 'Corps de l\'article')
             ->maxLength('meta_title', 'Titre SEO', 190)
             ->maxLength('meta_description', 'Description SEO', 255)
+            ->maxLength('title_en', 'Titre (anglais)', 190)
+            ->maxLength('excerpt_en', 'Chapô (anglais)', 500)
+            ->maxLength('meta_description_en', 'Description SEO (anglais)', 255)
             ->in('status', 'Statut', ['draft', 'published']);
 
         if ($validator->fails()) {
@@ -192,6 +195,13 @@ final class NewsAdminController extends AdminController
             $excerpt = str_excerpt(Markdown::toText($body), 220);
         }
 
+        $bodyEn = (string) ($request->input('body_en') ?? '');
+        $excerptEn = (string) ($request->input('excerpt_en') ?? '');
+
+        if ($excerptEn === '' && $bodyEn !== '') {
+            $excerptEn = str_excerpt(Markdown::toText($bodyEn), 220);
+        }
+
         $publishedAt = $request->input('published_at');
 
         if ($status === 'published') {
@@ -204,11 +214,15 @@ final class NewsAdminController extends AdminController
         }
 
         $metaDescription = (string) ($request->input('meta_description') ?? '');
+        $metaDescriptionEn = (string) ($request->input('meta_description_en') ?? '');
 
         return [
             'title' => (string) $request->input('title'),
             'excerpt' => $excerpt,
             'body' => $body,
+            'title_en' => $request->input('title_en') ?: null,
+            'excerpt_en' => $excerptEn !== '' ? $excerptEn : null,
+            'body_en' => $bodyEn !== '' ? $bodyEn : null,
             'cover_alt' => $request->input('cover_alt'),
             'status' => $status,
             'published_at' => $publishedAt,
@@ -216,6 +230,9 @@ final class NewsAdminController extends AdminController
             'meta_description' => $metaDescription !== ''
                 ? mb_substr($metaDescription, 0, 255)
                 : mb_substr($excerpt, 0, 155),
+            'meta_description_en' => $metaDescriptionEn !== ''
+                ? mb_substr($metaDescriptionEn, 0, 255)
+                : ($excerptEn !== '' ? mb_substr($excerptEn, 0, 155) : null),
         ];
     }
 

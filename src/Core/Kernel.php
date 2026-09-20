@@ -25,6 +25,10 @@ final class Kernel
 
             $match = $this->router->match($request->method, $request->path);
 
+            Locale::set((string) ($match['params']['locale'] ?? Locale::DEFAULT));
+            Locale::setRawPath($request->path);
+            Config::setRequestBaseUrl($request->origin());
+
             foreach ($match['middleware'] as $middleware) {
                 $response = $this->runMiddleware($middleware, $request);
 
@@ -78,7 +82,7 @@ final class Kernel
             throw new HttpException(401);
         }
 
-        Session::flash('warning', 'Veuillez vous connecter pour accéder à cette page.');
+        Session::flash('warning', t('flash.login_required'));
 
         return Response::redirect(url('/admin/connexion'));
     }
@@ -163,11 +167,11 @@ final class Kernel
                 'status' => $status,
                 'message' => $message,
                 'title' => match ($status) {
-                    404 => 'Page introuvable',
-                    403 => 'Accès refusé',
-                    419 => 'Session expirée',
-                    429 => 'Trop de requêtes',
-                    default => 'Erreur',
+                    404 => t('error.not_found_title'),
+                    403 => t('error.forbidden_title'),
+                    419 => t('error.session_expired_title'),
+                    429 => t('error.too_many_requests_title'),
+                    default => t('error.generic_title'),
                 },
                 'isAdmin' => $isAdmin,
                 'noindex' => true,

@@ -1,0 +1,14 @@
+.git
+.vscode
+vendor
+.env
+storage/cache/*
+storage/logs/*
+storage/tmp/*
+storage/diplomas/*
+storage/uploads/*
+storage/*.sqlite
+!storage/**/.gitkeep
+docs
+tests
+*.md

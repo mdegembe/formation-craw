@@ -160,4 +160,19 @@ final class Request
     {
         return $this->isAjax() || str_contains((string) $this->header('Accept', ''), 'application/json');
     }
+
+    /**
+     * Origine (schema + hote) telle que vue par le navigateur, en tenant compte
+     * d'un eventuel reverse proxy (Caddy transmet le Host original tel quel,
+     * mais on lit aussi X-Forwarded-Proto/Host au cas ou un autre proxy est ajoute).
+     */
+    public function origin(): string
+    {
+        $scheme = $this->header('X-Forwarded-Proto')
+            ?? (($this->server['HTTPS'] ?? '') !== '' && $this->server['HTTPS'] !== 'off' ? 'https' : 'http');
+
+        $host = $this->header('X-Forwarded-Host') ?? (string) ($this->server['HTTP_HOST'] ?? '');
+
+        return $host === '' ? '' : rtrim($scheme, '/') . '://' . $host;
+    }
 }
